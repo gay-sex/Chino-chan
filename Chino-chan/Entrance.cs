@@ -155,6 +155,19 @@ namespace Chino_chan
                 Global.StopAsync().Wait();
                 Environment.Exit(exitCode: 0);
             }
+            else if (Trim == "reload")
+            {
+                if (Channel != null)
+                    Channel.SendMessageAsync(
+                        Global.LanguageHandler.GetLanguage(
+                            Global.GuildSettings.GetSettings(Channel.GuildId).LanguageId).Reload).Wait();
+
+                Reload(Channel);
+            }
+            else if (Trim == "update")
+            {
+                Global.Updater.Update();
+            }
         }
 
         private static void Clean()
@@ -164,7 +177,7 @@ namespace Chino_chan
 
             Global.Logger.Log(ConsoleColor.DarkMagenta, Modules.LogType.GC, null, "Garbage collected!");
         }
-        public static void Restart(ITextChannel Channel = null)
+        public static void Reload(ITextChannel Channel = null)
         {
             Task.Run(() =>
             {

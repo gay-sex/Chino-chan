@@ -59,7 +59,7 @@ namespace Chino_chan.Commands
         public async Task ReloadAsync(params string[] Args)
         {
             await Context.Channel.SendMessageAsync(Language.Restarting);
-            Entrance.Restart(Context.Channel as ITextChannel);
+            Entrance.Reload(Context.Channel as ITextChannel);
         }
 
         [Command("shutdown"), Summary("Owner"), Models.Privillages.Owner()]

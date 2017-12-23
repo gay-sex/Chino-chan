@@ -173,6 +173,8 @@ namespace Chino_chan
             }
         }
 
+        public static Updater Updater { get; private set; }
+
         public static Irc Irc { get; private set; }
         public static osuApi osuAPI { get; private set; }
 
@@ -188,7 +190,7 @@ namespace Chino_chan
             Gelbooru = new Gelbooru();
             Danbooru = new Danbooru();
             Yandere = new Yandere();
-
+            
             if (!string.IsNullOrWhiteSpace(Settings.Credentials.Sankaku.Username)
                 && !string.IsNullOrWhiteSpace(Settings.Credentials.Sankaku.Password))
             {
@@ -202,6 +204,8 @@ namespace Chino_chan
             
             LanguageHandler = new LanguageHandler();
             GuildSettings = new GuildSettings();
+            
+            Updater = new Updater();
 
             Client = new DiscordSocketClient(new DiscordSocketConfig()
             {
@@ -559,8 +563,7 @@ namespace Chino_chan
         }
         public static bool IsNsfwChannel(GuildSetting GuildSettings, ulong ChannelId)
         {
-            return GuildSettings.NsfwChannels.Contains(ChannelId)
-                || (bool)Client.GetGuild(GuildSettings.GuildId)?.GetTextChannel(ChannelId)?.IsNsfw;
+            return GuildSettings.NsfwChannels.Contains(ChannelId);
         }
         
         public static bool IsAdminOrHigher(ulong Id, ulong GuildId)

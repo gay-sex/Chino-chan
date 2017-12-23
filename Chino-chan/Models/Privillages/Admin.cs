@@ -9,7 +9,7 @@ namespace Chino_chan.Models.Privillages
 {
     public class Admin : PreconditionAttribute
     {
-        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext Context, CommandInfo Command, IServiceProvider Services)
+        public override Task<PreconditionResult> CheckPermissions(ICommandContext Context, CommandInfo Command, IServiceProvider Services)
         {
             if (Global.IsAdminOrHigher(Context.User.Id, Context.Guild.Id))
             {

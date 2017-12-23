@@ -9,7 +9,7 @@ namespace Chino_chan.Models.Privillages
 {
     public class GlobalAdmin : PreconditionAttribute
     {
-        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext Context, CommandInfo Command, IServiceProvider Services)
+        public override Task<PreconditionResult> CheckPermissions(ICommandContext Context, CommandInfo command, IServiceProvider services)
         {
             if (Global.IsGlobalAdminOrHigher(Context.User.Id))
             {
@@ -17,5 +17,6 @@ namespace Chino_chan.Models.Privillages
             }
             return Task.Run(() => PreconditionResult.FromError("GlobalAdmin"));
         }
+        
     }
 }

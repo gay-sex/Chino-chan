@@ -11,7 +11,7 @@ namespace Chino_chan.Image
     {
         ImgurClient Client;
         ImageEndpoint Endpoint;
-
+        
         public Imgur()
         {
             Global.Logger.Log(ConsoleColor.Green, Modules.LogType.Imgur, "Login", "Logging in...");

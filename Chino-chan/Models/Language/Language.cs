@@ -181,6 +181,7 @@ namespace Chino_chan.Models.Language
         public string Restarted { get; set; } = "Restarted owo";
 
         public string Shutdown { get; set; } = "I'm going offline :< Bye~";
+        public string Reload { get; set; } = "Reloading, please wait~";
         #endregion
 
         public Dictionary<string, string> Help { get; set; } = new Dictionary<string, string>()
