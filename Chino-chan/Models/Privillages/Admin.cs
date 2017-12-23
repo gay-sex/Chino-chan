@@ -9,9 +9,9 @@ namespace Chino_chan.Models.Privillages
 {
     public class Admin : PreconditionAttribute
     {
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext Context, CommandInfo Command, IServiceProvider Services)
+        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
-            if (Global.IsAdminOrHigher(Context.User.Id, Context.Guild.Id))
+            if (Global.IsAdminOrHigher(context.User.Id, context.Guild.Id))
             {
                 return Task.Run(() => PreconditionResult.FromSuccess());
             }
