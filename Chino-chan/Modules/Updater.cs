@@ -1,7 +1,6 @@
 ﻿//using Microsoft.CSharp;
 using System;
 using System.CodeDom.Compiler;
-using Microsoft.CodeDom.Providers.DotNetCompilerPlatform;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -18,9 +17,7 @@ namespace Chino_chan.Modules
     public class Updater
     {
         WebClient Client;
-
-        CSharpCodeProvider Provider;
-
+        
         private string ProjectName
         {
             get
@@ -32,7 +29,6 @@ namespace Chino_chan.Modules
         
         public Updater()
         {
-            Provider = new CSharpCodeProvider();
             Client = new WebClient();
         }
 
@@ -93,10 +89,10 @@ namespace Chino_chan.Modules
 
             File.WriteAllLines("post.ps1", new string[4]
             {
-                "Wait-Process -Name Chino-chan -Timeout 300",
-                "Remove-Item -Path Chino-chan.exe",
-                "Copy-Item -Path GitUpdate\\Compiled\\Chino-chan.exe -Destination Chino-chan.exe",
-                "Start-Process Chino-chan.exe"
+                "Wait-Process -Name " + ProjectName + " -Timeout 300",
+                "Remove-Item -Path " + ProjectName + ".exe",
+                "Copy-Item -Path GitUpdate\\Compiled\\" + ProjectName + ".exe -Destination " + ProjectName + ".exe",
+                "Start-Process " + ProjectName + ".exe"
             });
             
             Process.Start("powershell.exe Set-ExecutionPolicy Unrestricted -Scope CurrentUser").WaitForExit();
@@ -114,44 +110,75 @@ namespace Chino_chan.Modules
         private bool Compile()
         {
             Global.Logger.Log(ConsoleColor.DarkYellow, LogType.Updater, "Updater", "Compiling...");
+
+            // Getting Project location
             var ProjectFileMatches = Directory.EnumerateFiles("GitUpdate", "*.csproj", SearchOption.AllDirectories);
             if (ProjectFileMatches.Count() != 1)
             {
                 Global.Logger.Log(ConsoleColor.Red, LogType.Updater, "Compiler", "Couldn't find the project file!");
                 return false;
             }
-            var Project = File.ReadAllText(ProjectFileMatches.First());
 
-            var Deps = ProcessDependencyFiles(Project);
-            if (Deps == null)
+            // Getting Solution Location
+
+            var SolutionFileMatches = Directory.EnumerateFiles("GitUpdate", "*.sln", SearchOption.AllDirectories);
+            if (SolutionFileMatches.Count() != 1)
             {
+                Global.Logger.Log(ConsoleColor.Red, LogType.Updater, "Compiler", "Couldn't find the solution file!");
                 return false;
             }
+            // Processing dependency locations
+            var ProjectFile = ProjectFileMatches.First();
+
+            var Project = File.ReadAllText(ProjectFile);
+
+            Project = ProcessDependencies(Project);
+
+            File.Delete(ProjectFile);
+            File.WriteAllText(ProjectFile, Project);
+
+            // Compiling
             
-            var Result = Provider.CompileAssemblyFromFile(new CompilerParameters(Deps)
+            var ProcessInfo = new ProcessStartInfo("MSBuild\\MSBuild.exe", SolutionFileMatches.First())
             {
-                OutputAssembly = "GitUpdate\\Compiled\\Chino-chan.exe",
-                GenerateExecutable = true,
-                MainClass = "Entrance.cs",
-                TreatWarningsAsErrors = false,
-                GenerateInMemory = false,
-                WarningLevel = 4,
-            }, ProcessSourceFiles(Project));
-            
-            if (Result.Errors.Count > 0)
+                //RedirectStandardInput = true,
+                //RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+
+            var CompileProcess = new Process
             {
-                foreach (CompilerError Error in Result.Errors)
-                {
-                    Global.Logger.Log(ConsoleColor.Red, LogType.Updater, "Compile Error",
-                        "Line number " + Error.Line +
-                        ", Error Number: " + Error.ErrorNumber +
-                        ", '" + Error.ErrorText + "; in " + Error.FileName);
-                }
+                StartInfo = ProcessInfo
+            };
+
+            CompileProcess.Start();
+            CompileProcess.WaitForExit();
+
+            var CompiledLocation = "";
+
+            if (File.Exists((CompiledLocation = "GitUpdate\\" + ProjectName + "-" + Global.Settings.GithubBranch + "\\"
+                + ProjectName + "\\bin\\Debug\\" + ProjectName + ".exe")))
+            {
+                Directory.CreateDirectory("GitUpdate\\Compiled");
+                File.Move(CompiledLocation, "GitUpdate\\Compiled\\" + ProjectName + ".exe");
+
+                Global.Logger.Log(ConsoleColor.DarkYellow, LogType.Updater, "Updater", "Compiled!");
+
+                return true;
+            }
+            else
+            {
+                Global.Logger.Log(ConsoleColor.Red, LogType.Updater, "Compile", "Couldn't compile! Check error.log!");
+                if (File.Exists("error.log"))
+                    File.Delete("error.log");
+
+                File.WriteAllText("error.log", CompileProcess.StandardError.ReadToEnd());
+
                 return false;
             }
-
-            Global.Logger.Log(ConsoleColor.DarkYellow, LogType.Updater, "Updater", "Compiled!");
-            return true;
         }
 
 
@@ -195,6 +222,20 @@ namespace Chino_chan.Modules
             var Dependencies = Dlls.Where(t => DependencyNames.Contains(Path.GetFileNameWithoutExtension(t))).ToList();
             Dependencies.AddRange(Directory.EnumerateFiles(Environment.CurrentDirectory, "*.dll"));
             return Dependencies.ToArray();
+        }
+
+        private string ProcessDependencies(string Project)
+        {
+            var ProcessedProject = Project;
+
+            var SearchCompile = new Regex("<Reference Include=\".*?\" \\/>.*?<HintPath>(.*?)</HintPath>");
+            foreach (Match Match in SearchCompile.Matches(Project))
+            {
+                var FilePath = "..\\..\\..\\" + Path.GetFileName(Match.Groups[1].Value);
+                ProcessedProject = ProcessedProject.Replace(Match.Groups[1].Value, FilePath);
+            }
+
+            return ProcessedProject;
         }
     }
 }
