@@ -136,14 +136,14 @@ namespace Chino_chan.Modules
 
             File.Delete(ProjectFile);
             File.WriteAllText(ProjectFile, Project);
-
-            // Compiling
             
+            // Compiling
+
             var ProcessInfo = new ProcessStartInfo("MSBuild\\MSBuild.exe", SolutionFileMatches.First())
             {
                 //RedirectStandardInput = true,
-                //RedirectStandardOutput = true,
-                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                //RedirectStandardError = true,
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 WindowStyle = ProcessWindowStyle.Hidden
@@ -175,7 +175,7 @@ namespace Chino_chan.Modules
                 if (File.Exists("error.log"))
                     File.Delete("error.log");
 
-                File.WriteAllText("error.log", CompileProcess.StandardError.ReadToEnd());
+                File.WriteAllText("error.log", CompileProcess.StandardOutput.ReadToEnd());
 
                 return false;
             }
