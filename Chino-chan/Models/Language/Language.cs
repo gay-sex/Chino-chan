@@ -53,6 +53,9 @@ namespace Chino_chan.Models.Language
 
         public string OnlyNsfw { get; set; } = "This command can only be invoked in private and nsfw channels, sorry :<";
         public string OnlyServer { get; set; } = "Sorry, but this is only a server-side command :c";
+
+        public string Updated { get; set; } = "Successfully updated! uwu Restarting...";
+        public string UpdateError { get; set; } = "Couldn't update :( Please check the console for more information";
         #endregion
         #region Debug
         public string GCDone { get; set; } = "Garbage cleaned!";

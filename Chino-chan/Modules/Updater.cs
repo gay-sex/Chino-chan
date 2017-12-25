@@ -1,6 +1,4 @@
-﻿//using Microsoft.CSharp;
-using System;
-using System.CodeDom.Compiler;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,12 +9,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using Google.Apis.Download;
 
 namespace Chino_chan.Modules
 {
     public class Updater
     {
-        WebClient Client;
+        MediaDownloader Downloader;
         
         private string ProjectName
         {
@@ -25,217 +24,138 @@ namespace Chino_chan.Modules
                 return Global.Settings.GithubLink.Substring(Global.Settings.GithubLink.LastIndexOf("/"));
             }
         }
-
         
         public Updater()
         {
-            Client = new WebClient();
+            Downloader = new MediaDownloader(Global.GoogleDrive)
+            {
+                ChunkSize = 512 * 1024
+            };
+        }
+        
+        public bool Update()
+        {
+            var Downloaded = DownloadUpdate();
+            if (Downloaded)
+            {
+                var Script = RunScript();
+
+                return Script;
+            }
+            return false;
         }
 
-        /*
-        public void Update()
+        public bool DownloadUpdate()
         {
-            if (ProcessUpdate())
+            Global.Logger.Log(ConsoleColor.Cyan, LogType.Updater, null, "Updating..");
+
+            if (Directory.Exists("Update") && Directory.EnumerateFiles("Update").Count() != 0)
             {
-                Global.Logger.Log(ConsoleColor.DarkYellow, LogType.Updater, null, "Update successful! Restarting...");
-                Global.StopAsync().GetAwaiter().GetResult();
-                Environment.Exit(exitCode: 0);
+                try
+                {
+                    Directory.Delete("Update", true);
+                    Directory.CreateDirectory("Update");
+                }
+                catch (IOException)
+                {
+                    Global.Logger.Log(ConsoleColor.Red, LogType.Updater, "Download", "Something is using the Update folder! Please consider removing it manually!");
+                    return false;
+                }
             }
             else
             {
-                Global.Logger.Log(ConsoleColor.Red, LogType.Updater, null, "Couldn't update!");
-            }
-        }
-        */
-
-        public bool Update()
-        {
-            if (Directory.Exists("GitUpdate"))
-            {
-                Global.Logger.Log(ConsoleColor.Red, LogType.Updater, "Download", "Please remove GitUpdate folder manually, because probably the last update didn't complete, and try again!");
-                return false;
+                Directory.CreateDirectory("Update");
             }
 
-            if (string.IsNullOrWhiteSpace(Global.Settings.GithubLink))
+            var Files = Global.GoogleDrive.Files.List().Execute().Items;
+
+            var Packages = Files.Where(p =>
             {
-                Global.Logger.Log(ConsoleColor.Red, LogType.Updater, "Github", "Please provide the link of the repository to the Settings.json in the Data folder! (GithubLink property)");
-                return false;
-            }
-            Directory.CreateDirectory("GitUpdate");
-
-            Client.DownloadFile(new Uri(Global.Settings.GithubLink + "/archive/" + Global.Settings.GithubBranch + ".zip"), "GitUpdate\\archive.zip");
-
-            if (!File.Exists("GitUpdate\\archive.zip"))
+                return p.OriginalFilename == "Chino-chan.exe";
+            }).OrderBy(s =>
             {
-                Global.Logger.Log(ConsoleColor.Red, LogType.Updater, "Github", "Couldn't download the archive of the repository!");
-                Directory.Delete("GitUpdate", true);
-                return false;
-            }
-
-            Global.Logger.Log(ConsoleColor.DarkYellow, LogType.Updater, "Github", "Repository downloaded!");
-
-            ZipFile.ExtractToDirectory("GitUpdate\\archive.zip", "GitUpdate");
-
-            Global.Logger.Log(ConsoleColor.DarkYellow, LogType.Updater, "Github", "Repository extracted!");
-
-            File.Delete("GitUpdate\\archive.zip");
-
-            if (!Compile())
-            {
-                Global.Logger.Log(ConsoleColor.Red, LogType.Updater, "Compile", "Couldn't compile!");
-                Directory.Delete("GitUpdate", true);
-                return false;
-            }
-
-            File.WriteAllLines("post.ps1", new string[4]
-            {
-                "Wait-Process -Name " + ProjectName + " -Timeout 300",
-                "Remove-Item -Path " + ProjectName + ".exe",
-                "Copy-Item -Path GitUpdate\\Compiled\\" + ProjectName + ".exe -Destination " + ProjectName + ".exe",
-                "Start-Process " + ProjectName + ".exe"
+                return s.CreatedDate;
             });
             
-            Process.Start("powershell.exe Set-ExecutionPolicy Unrestricted -Scope CurrentUser").WaitForExit();
-
-            Process.Start(new ProcessStartInfo()
+            if (Packages.Count() == 0)
             {
-                UseShellExecute = true,
-                FileName = "powershell.exe",
-                Arguments = "post.ps1"
-            });
+                Global.Logger.Log(ConsoleColor.Red, LogType.GoogleDrive, null, "Couldn't find Chino-chan.exe! Please upload to update!");
+                return false;
+            }
+
+            var ChinoChan = Packages.First();
+
+            var ChinoChanPath = "Update\\Chino-chan.exe";
+
+            Global.Logger.Log(ConsoleColor.Cyan, LogType.Updater, null, "Downloading update..");
+
+            var Progress = Downloader.Download(ChinoChan.DownloadUrl, new FileStream(ChinoChanPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read));
+            
+            if (Progress.Status != DownloadStatus.Completed)
+            {
+                Global.Logger.Log(ConsoleColor.Red, LogType.GoogleDrive, null, "Couldn't download the latest Chino-chan.exe: " + Progress.Exception.ToString());
+                return false;
+            }
+            Global.Logger.Log(ConsoleColor.Cyan, LogType.Updater, null, "Downloaded!");
 
             return true;
         }
-
-        private bool Compile()
+        public bool RunScript()
         {
-            Global.Logger.Log(ConsoleColor.DarkYellow, LogType.Updater, "Updater", "Compiling...");
-
-            // Getting Project location
-            var ProjectFileMatches = Directory.EnumerateFiles("GitUpdate", "*.csproj", SearchOption.AllDirectories);
-            if (ProjectFileMatches.Count() != 1)
+            if (!File.Exists("Update\\Chino-chan.exe"))
             {
-                Global.Logger.Log(ConsoleColor.Red, LogType.Updater, "Compiler", "Couldn't find the project file!");
+                Global.Logger.Log(ConsoleColor.Red, LogType.Updater, null, "I couldn't find any updates!");
                 return false;
             }
 
-            // Getting Solution Location
+            #region Script
+            var Script =
+@"$Count = (Get-Process | Where-Object {$_.ProcessName -like ""Chino-chan""}).Count
+If ($Count -gt 0) {
+	Wait-Process -Name Chino-chan
+    Start-Sleep -s 1
+}
+If (Test-Path Update\\Chino-chan.exe) {
+	Remove-Item -Path Chino-chan.exe
+	Move-Item -Path Update\\Chino-chan.exe -Destination Chino-chan.exe
+    Remove-Item -Path Update
+}
+If (Test-Path Chino-chan.exe) {
+	Start-Process Chino-chan.exe
+}
+Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force";
 
-            var SolutionFileMatches = Directory.EnumerateFiles("GitUpdate", "*.sln", SearchOption.AllDirectories);
-            if (SolutionFileMatches.Count() != 1)
+            #endregion
+
+            File.WriteAllText("PostScript.ps1", Script);
+
+            var PolicyChange = new Process()
             {
-                Global.Logger.Log(ConsoleColor.Red, LogType.Updater, "Compiler", "Couldn't find the solution file!");
-                return false;
-            }
-            // Processing dependency locations
-            var ProjectFile = ProjectFileMatches.First();
-
-            var Project = File.ReadAllText(ProjectFile);
-
-            Project = ProcessDependencies(Project);
-
-            File.Delete(ProjectFile);
-            File.WriteAllText(ProjectFile, Project);
+                StartInfo = new ProcessStartInfo()
+                {
+                    FileName = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                    Arguments = "Set-ExecutionPolicy Unrestricted",
+                    UseShellExecute = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                }
+            };
+            PolicyChange.Start();
+            PolicyChange.WaitForExit();
             
-            // Compiling
-
-            var ProcessInfo = new ProcessStartInfo("MSBuild\\MSBuild.exe", SolutionFileMatches.First())
+            var PostScript = new Process()
             {
-                //RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                //RedirectStandardError = true,
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                WindowStyle = ProcessWindowStyle.Hidden
+                StartInfo = new ProcessStartInfo()
+                {
+                    FileName = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                    Arguments = ".\\PostScript.ps1",
+                    UseShellExecute = true,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                }
             };
+            PostScript.Start();
 
-            var CompileProcess = new Process
-            {
-                StartInfo = ProcessInfo
-            };
-
-            CompileProcess.Start();
-            CompileProcess.WaitForExit();
-
-            var CompiledLocation = "";
-
-            if (File.Exists((CompiledLocation = "GitUpdate\\" + ProjectName + "-" + Global.Settings.GithubBranch + "\\"
-                + ProjectName + "\\bin\\Debug\\" + ProjectName + ".exe")))
-            {
-                Directory.CreateDirectory("GitUpdate\\Compiled");
-                File.Move(CompiledLocation, "GitUpdate\\Compiled\\" + ProjectName + ".exe");
-
-                Global.Logger.Log(ConsoleColor.DarkYellow, LogType.Updater, "Updater", "Compiled!");
-
-                return true;
-            }
-            else
-            {
-                Global.Logger.Log(ConsoleColor.Red, LogType.Updater, "Compile", "Couldn't compile! Check error.log!");
-                if (File.Exists("error.log"))
-                    File.Delete("error.log");
-
-                File.WriteAllText("error.log", CompileProcess.StandardOutput.ReadToEnd());
-
-                return false;
-            }
-        }
-
-
-        private string[] ProcessSourceFiles(string Project)
-        {
-            var SearchCompile = new Regex("<Compile Include=\"(.*?)\" \\/>");
-            var Files = new List<string>();
-            foreach (Match Match in SearchCompile.Matches(Project))
-            {
-                Files.Add("GitUpdate\\" + ProjectName + "-" + Global.Settings.GithubBranch + 
-                    "\\" + ProjectName + "\\" + Match.Groups[1].Value);
-            }
-            return Files.ToArray();
-        }
-        private string[] ProcessDependencyFiles(string Project)
-        {
-            var SearchCompile = new Regex("<Reference Include=\"(.*?)\" \\/>");
-            var DependencyNames = new List<string>();
-            foreach (Match Match in SearchCompile.Matches(Project))
-            {
-                DependencyNames.Add(Match.Groups[1].Value);
-            }
-            var Assemblies = "";
-            if (Directory.Exists((Assemblies = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
-                + "\\Reference Assemblies\\Microsoft\\Framework\\.NETFramework\\v4.6.2")))
-            {
-                // Has nothing to do
-            }
-            else if (Directory.Exists((Assemblies = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-                + "\\Reference Assemblies\\Microsoft\\Framework\\.NETFramework\\v4.6.2")))
-            {
-                // Has nothing to do
-            }
-            else
-            {
-                Global.Logger.Log(ConsoleColor.Red, LogType.Updater, null, "Please consider installing .Net Framework 4.6.2!");
-                return null;
-            }
-
-            var Dlls = Directory.EnumerateFiles(Assemblies, "*.dll");
-            var Dependencies = Dlls.Where(t => DependencyNames.Contains(Path.GetFileNameWithoutExtension(t))).ToList();
-            Dependencies.AddRange(Directory.EnumerateFiles(Environment.CurrentDirectory, "*.dll"));
-            return Dependencies.ToArray();
-        }
-
-        private string ProcessDependencies(string Project)
-        {
-            var ProcessedProject = Project;
-
-            var SearchCompile = new Regex("<Reference Include=\".*?\" \\/>.*?<HintPath>(.*?)</HintPath>");
-            foreach (Match Match in SearchCompile.Matches(Project))
-            {
-                var FilePath = "..\\..\\..\\" + Path.GetFileName(Match.Groups[1].Value);
-                ProcessedProject = ProcessedProject.Replace(Match.Groups[1].Value, FilePath);
-            }
-
-            return ProcessedProject;
+            return true;
         }
     }
 }

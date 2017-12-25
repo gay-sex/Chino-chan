@@ -6,7 +6,7 @@ namespace Chino_chan.Models.Privillages
 {
     public class Owner : PreconditionAttribute
     {
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider services)
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
             if (Global.IsOwner(context.User.Id))
             {

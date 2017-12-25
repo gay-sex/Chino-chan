@@ -37,7 +37,8 @@ namespace Chino_chan.Modules
         WMI,
         Images,
         Sankaku,
-        Imgur
+        Imgur,
+        GoogleDrive
     }
     public class BaseLogger
     {

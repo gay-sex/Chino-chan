@@ -9,7 +9,7 @@ namespace Chino_chan.Models.Privillages
 {
     public class ServerOwner : PreconditionAttribute
     {
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider services)
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
             if (Global.IsServerOwnerOrHigher(context.User.Id, context.Guild))
             {

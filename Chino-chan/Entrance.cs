@@ -166,7 +166,11 @@ namespace Chino_chan
             }
             else if (Trim == "update")
             {
-                Global.Updater.Update();
+                if (Global.Updater.Update())
+                {
+                    Environment.Exit(exitCode: 0);
+                }
+                
             }
         }
 

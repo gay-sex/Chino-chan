@@ -16,6 +16,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Troschuetz.Random;
 using Troschuetz.Random.Generators;
+using Google.Apis.Drive.v2;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Services;
 
 namespace Chino_chan
 {
@@ -153,6 +156,8 @@ namespace Chino_chan
         public static Yandere Yandere { get; private set; }
         public static Sankaku Sankaku { get; private set; }
 
+        public static DriveService GoogleDrive { get; private set; }
+
         public static Image.Imgur Imgur { get; private set; }
         
         public static CPUInfo CPU { get; private set; }
@@ -192,14 +197,32 @@ namespace Chino_chan
             Yandere = new Yandere();
             
             if (!string.IsNullOrWhiteSpace(Settings.Credentials.Sankaku.Username)
-                && !string.IsNullOrWhiteSpace(Settings.Credentials.Sankaku.Password))
+             && !string.IsNullOrWhiteSpace(Settings.Credentials.Sankaku.Password))
             {
                 Sankaku = new Sankaku(Settings.Credentials.Sankaku.Username, Settings.Credentials.Sankaku.Password);
             }
             if (!string.IsNullOrWhiteSpace(Settings.Credentials.Imgur.ClientId)
-                && !string.IsNullOrWhiteSpace(Settings.Credentials.Imgur.ClientSecret))
+             && !string.IsNullOrWhiteSpace(Settings.Credentials.Imgur.ClientSecret))
             {
                 Imgur = new Image.Imgur();
+            }
+
+            if (!string.IsNullOrWhiteSpace(Settings.Credentials.Google.ClientSecret)
+             && !string.IsNullOrWhiteSpace(Settings.Credentials.Google.ClientId))
+            {
+                Logger.Log(ConsoleColor.Green, LogType.GoogleDrive, null, "Logging into GoogleDrive...");
+                var Credential = GoogleWebAuthorizationBroker.AuthorizeAsync(new ClientSecrets()
+                {
+                    ClientId = Settings.Credentials.Google.ClientId,
+                    ClientSecret = Settings.Credentials.Google.ClientSecret
+                }, new string[] { DriveService.Scope.Drive }, "user", CancellationToken.None).Result;
+                
+                GoogleDrive = new DriveService(new BaseClientService.Initializer()
+                {
+                    HttpClientInitializer = Credential,
+                    ApplicationName = "Chino-chan"
+                });
+                Logger.Log(ConsoleColor.Green, LogType.GoogleDrive, null, "Logged in!");
             }
             
             LanguageHandler = new LanguageHandler();
@@ -515,35 +538,56 @@ namespace Chino_chan
             if (File.Exists(SettingsPath))
             {
                 Settings = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(SettingsPath));
-                Logger.Log(ConsoleColor.Yellow, LogType.Settings, null, "Loading settings...");
+
+                if (Settings == null)
+                    Settings = new Settings();
+
+                Logger.Log(ConsoleColor.Yellow, LogType.Settings, null, "Settings read, checking..");
             }
             else
             {
+                Settings = new Settings();
                 SaveSettings();
-                Settings = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(SettingsPath));
             }
 
+            var HasToQuit = false;
+            
             if (string.IsNullOrWhiteSpace(Settings.Credentials.Discord.Token))
             {
-                throw new Exception("Discord Token is missing!");
+                Logger.Log(ConsoleColor.Red, LogType.Discord, null, "Please insert the Discord token!");
+                HasToQuit = true;
             }
-            else if (Settings.Owner.Id == 0)
+            if (Settings.Owner?.Id == 0)
             {
-                throw new Exception("Owner ID is missing!");
+                Logger.Log(ConsoleColor.Red, LogType.Discord, null, "Please insert your Discord Id!");
+                HasToQuit = true;
             }
-            else if (string.IsNullOrWhiteSpace(Settings.Owner.Password))
+            if (string.IsNullOrWhiteSpace(Settings.Owner?.Password))
             {
-                throw new Exception("Owner Password is missing!");
+                Logger.Log(ConsoleColor.Red, LogType.Discord, null, "Please insert your custom password! This can be anything, you have to define it to access to the console!");
+                HasToQuit = true;
             }
-            else if (Settings.WebServerPort < 1)
+            if (Settings.WebServerPort < 1 || Settings.WebServerPort > 65535)
             {
-                throw new Exception("WebServer port is missing!");
+                Logger.Log(ConsoleColor.Red, LogType.Discord, null, "Please define the WebServer port between 0 and 65535!");
+                HasToQuit = true;
+            }
+
+            if (HasToQuit)
+            {
+                Logger.Log(ConsoleColor.Cyan, LogType.NoDisplay, null, "You can find the Settings.json in \"Data\" folder!");
+
+                Console.ReadLine();
+                Environment.Exit(exitCode: 0);
             }
 
             Images = new ImageHandler();
 
             SaveSettings();
+            
+            Logger.Log(ConsoleColor.Yellow, LogType.Settings, null, "Settings Loaded!");
         }
+        
         public static void SaveSettings()
         {
             if (File.Exists(SettingsPath))
@@ -563,7 +607,8 @@ namespace Chino_chan
         }
         public static bool IsNsfwChannel(GuildSetting GuildSettings, ulong ChannelId)
         {
-            return GuildSettings.NsfwChannels.Contains(ChannelId);
+            return GuildSettings.NsfwChannels.Contains(ChannelId)
+                || (bool)(Client.GetChannel(ChannelId) as ITextChannel)?.IsNsfw;
         }
         
         public static bool IsAdminOrHigher(ulong Id, ulong GuildId)
