@@ -43,7 +43,6 @@
   <ItemGroup>
     <Compile Include="Commands\Fun.cs" />
     <Compile Include="Commands\Information.cs" />
-    <Compile Include="Commands\Irc.cs" />
     <Compile Include="Commands\Management.cs" />
     <Compile Include="Commands\Owner.cs" />
     <Compile Include="Entrance.cs" />
@@ -57,13 +56,10 @@
     <Compile Include="Image\Yandere.cs" />
     <Compile Include="Models\Settings\Credentials\GoogleCredentials.cs" />
     <Compile Include="Models\Settings\Trivia.cs" />
-    <Compile Include="Modules\Irc.cs" />
     <Compile Include="Modules\LanguageHandler.cs" />
     <Compile Include="Modules\BaseLogger.cs" />
     <Compile Include="Models\File\FileCollection.cs" />
     <Compile Include="Models\Images\ImageResponse.cs" />
-    <Compile Include="Models\Irc\IrcDiscordChannelBinding.cs" />
-    <Compile Include="Models\Irc\IrcMessage.cs" />
     <Compile Include="Models\Language\Language.cs" />
     <Compile Include="Models\osuAPI\Beatmap.cs" />
     <Compile Include="Models\osuAPI\BestScore.cs" />
@@ -94,6 +90,7 @@
     <Compile Include="Models\Settings\UserCredential.cs" />
     <Compile Include="Models\Settings\WaifuCloudCredentials.cs" />
     <Compile Include="Modules\APIHandler.cs" />
+    <Compile Include="Modules\Music.cs" />
     <Compile Include="Modules\Updater.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Tools.cs" />
@@ -144,9 +141,6 @@
     </Reference>
     <Reference Include="Imgur.API, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Imgur.API.5.0.0-beta1\lib\net45\Imgur.API.dll</HintPath>
-    </Reference>
-    <Reference Include="Meebey.SmartIrc4net, Version=0.4.5.0, Culture=neutral, PublicKeyToken=7868485fbf407e0f, processorArchitecture=MSIL">
-      <HintPath>..\packages\SmartIrc4net.1.1\lib\Meebey.SmartIrc4net.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Extensions.DependencyInjection, Version=1.1.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">

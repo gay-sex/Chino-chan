@@ -125,14 +125,7 @@ namespace Chino_chan
                 return SettingsFolder + "\\Settings.json";
             }
         }
-
-        public static bool IrcEnabled
-        {
-            get
-            {
-                return !string.IsNullOrWhiteSpace(Settings.Credentials.osu.Password) && !string.IsNullOrWhiteSpace(Settings.Credentials.osu.Username);
-            }
-        }
+        
         public static bool OSUAPIEnabled
         {
             get
@@ -179,8 +172,7 @@ namespace Chino_chan
         }
 
         public static Updater Updater { get; private set; }
-
-        public static Irc Irc { get; private set; }
+        
         public static osuApi osuAPI { get; private set; }
 
         public static void Setup()
@@ -261,11 +253,7 @@ namespace Chino_chan
                 
                 return Task.CompletedTask;
             };
-
-            if (IrcEnabled)
-            {
-                Irc = new Irc();
-            }
+            
             if (OSUAPIEnabled)
             {
                 osuAPI = new osuApi();
@@ -478,18 +466,11 @@ namespace Chino_chan
         {
             await Client.LoginAsync(TokenType.Bot, Settings.Credentials.Discord.Token);
             await Client.StartAsync();
-
-            if (IrcEnabled)
-            {
-                Irc.Connect();
-            }
+            
         }
 
         public static async Task StopAsync()
         {
-            if (IrcEnabled)
-                if (Irc.Connected)
-                    Irc.Disconnect();
             await Client.StopAsync();
 
             Client.Dispose();

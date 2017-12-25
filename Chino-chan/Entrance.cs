@@ -71,80 +71,6 @@ namespace Chino_chan
                     Channel.SendMessageAsync(Channel.GetLanguage().GCDone);
                 }
             }
-            else if (Trim == "irc")
-            {
-                var ParamTrim = Parameter.Trim();
-                if (ParamTrim == "connect" || ParamTrim == "c")
-                {
-                    Global.Irc.Connect();
-                    if (Channel != null)
-                    {
-                        Channel.SendMessageAsync(Channel.GetLanguage().IrcConnected);
-                    }
-                }
-                else if (ParamTrim == "disconnect" || ParamTrim == "dc")
-                {
-                    Global.Irc.Disconnect();
-                    if (Channel != null)
-                    {
-                        Channel.SendMessageAsync(Channel.GetLanguage().IrcDisconnected);
-                    }
-                }
-                else if (ParamTrim == "reconnect" || ParamTrim == "rc")
-                {
-                    Global.Irc.Reconnect();
-                    if (Channel != null)
-                    {
-                        Channel.SendMessageAsync(Channel.GetLanguage().IrcReconnected);
-                    }
-                }
-                else if (ParamTrim.StartsWith("join"))
-                {
-                    var ChannelName = Parameter.Substring(Parameter.IndexOf(' ') + 1);
-                    var Success = Global.Irc.Join(ChannelName);
-                    if (Channel != null)
-                    {
-                        var Language = Channel.GetLanguage();
-                        if (Success)
-                        {
-                            Channel.SendMessageAsync(Language.IrcJoined.Prepare(new Dictionary<string, string>()
-                            {
-                                { "%IRCCHANNEL%", ChannelName }
-                            }));
-                        }
-                        else
-                        {
-                            Channel.SendMessageAsync(Language.IrcChannelNotFound.Prepare(new Dictionary<string, string>()
-                            {
-                                { "%IRCCHANNEL%", ChannelName }
-                            }));
-                        }
-                    }
-                }
-                else if (ParamTrim.StartsWith("part"))
-                {
-                    var ChannelName = Parameter.Substring(Parameter.IndexOf(' ') + 1);
-                    var Success = Global.Irc.Part(ChannelName);
-                    if (Channel != null)
-                    {
-                        var Language = Channel.GetLanguage();
-                        if (Success)
-                        {
-                            Channel.SendMessageAsync(Language.IrcJoined.Prepare(new Dictionary<string, string>()
-                            {
-                                { "%IRCCHANNEL%", ChannelName }
-                            }));
-                        }
-                        else
-                        {
-                            Channel.SendMessageAsync(Language.IrcChannelNotFound.Prepare(new Dictionary<string, string>()
-                            {
-                                { "%IRCCHANNEL%", ChannelName }
-                            }));
-                        }
-                    }
-                }
-            }
             else if (Trim == "quit")
             {
                 if (Channel != null)
@@ -193,7 +119,7 @@ namespace Chino_chan
         }
     }
 
-    public static class SettingsLanguageIrcExtensions
+    public static class SettingsExtension
     {
         public static GuildSetting GetSettings(this Discord.Commands.ICommandContext Context)
         {
@@ -227,61 +153,6 @@ namespace Chino_chan
         public static Models.Language.Language GetLanguage(this ulong GuildId)
         {
             return Global.LanguageHandler.GetLanguage(GuildId.GetSettings().LanguageId);
-        }
-
-        public static ITextChannel GetIrcChannel(this string ChannelName)
-        {
-            ITextChannel Channel;
-            var Index = Global.Settings.LastIRCChannels.FindIndex(t => t.ChannelName == ChannelName);
-            if (Index < 0)
-            {
-                return ChannelName.CreateIrcChannel();
-            }
-            else
-            {
-                var ValidChannelName = ChannelName.Substring(1);
-
-                var Binding = Global.Settings.LastIRCChannels[Index];
-
-                Channel = Global.Client.GetChannel(Binding.DiscordChannelId) as ITextChannel;
-                
-                if (Channel == null)
-                {
-                    Global.Settings.LastIRCChannels.RemoveAt(Index);
-                    Channel = ChannelName.CreateIrcChannel();
-                }
-                Global.SaveSettings();
-                return Channel;
-            }
-        }
-        private static ITextChannel CreateIrcChannel(this string ChannelName)
-        {
-            ITextChannel Channel = null;
-            var ValidChannelName = ChannelName.Substring(1);
-
-            var DevGuild = Global.Client.GetGuild(Global.Settings.DevServer.Id);
-
-            if (DevGuild != null)
-            {
-                var ChannelList = new List<Discord.WebSocket.SocketTextChannel>(DevGuild.TextChannels);
-                var ChannelIndex = ChannelList.FindIndex(t => t.Name == ValidChannelName);
-                if (ChannelIndex >= 0)
-                {
-                    Channel = ChannelList[ChannelIndex];
-                }
-                else
-                {
-                    Channel = DevGuild.CreateTextChannelAsync(ValidChannelName).Result;
-                }
-            }
-
-            Global.Settings.LastIRCChannels.Add(new Models.Irc.IrcDiscordChannelBinding()
-            {
-                ChannelName = ChannelName,
-                DiscordChannelId = Channel.Id
-            });
-
-            return Channel;
         }
         
         public static string Prepare(this Discord.Commands.ICommandContext Context, string Trivia)

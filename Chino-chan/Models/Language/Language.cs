@@ -153,21 +153,6 @@ namespace Chino_chan.Models.Language
 
         public string NoImages { get; set; } = "Sorry, but I couldn't find any images with these tags: `%TAGS%` :c";
         #endregion
-        #region Irc
-        public string IrcHelp { get; set; } = "```The Irc related commands are..\n\n%P%irc connect - Connects to Bancho\n\n%P%irc disconnect - Disconnects from Bancho\n\n%P%irc join (Channel name) - Joins to the given channel, and if there isn't, makes a Discord channel for it and binds there\n\n%P%irc part (Channel name) - Parts from the channel\n\n[The channel names are optional, because in-default, the command uses the name of the Discord channel~]```";
-
-        public string IrcDisabled { get; set; } = "Sorry, but the Irc is disabled :<";
-
-        public string IrcConnected { get; set; } = "I've connected to the Irc server!";
-        public string IrcAlreadyConnected { get; set; } = "I'm already in connection with the Irc server~";
-        public string IrcDisconnected { get; set; } = "I've disconnected from the Irc server!";
-        public string IrcAlreadyDisconnected { get; set; } = "I already have no connection with the Irc server :c";
-        public string IrcReconnected { get; set; } = "I've reconnected to the Irc server!";
-
-        public string IrcJoined { get; set; } = "I've joined to %IRCCHANNEL%!";
-        public string IrcParted { get; set; } = "I've left from %IRCCHANNEL%!";
-        public string IrcChannelNotFound { get; set; } = "I couldn't find %IRCCHANNEL%!";
-        #endregion
         #region Information
         public string HasNoGit { get; set; } = "Sorry, but I can't give it to you :c";
         public string GitDescription { get; set; } = "Click on my name to go to the site~";
@@ -210,8 +195,6 @@ namespace Chino_chan.Models.Language
             { "delete", "Simple delete sytem owo" },
             { "setnsfw", "Add or remove the channel from nsfw zone *doesn't override the nsfw channel mark of Discord*" },
             { "say", "Basic say command~" },
-
-            { "irc", "Some irc information" },
 
             { "info", "Some info about me o//o" },
             { "serverinfo", "Some information of the environment where I am owo" },

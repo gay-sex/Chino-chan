@@ -1,19 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using System.Collections.Generic;
 using Chino_chan.Models.Settings;
 using Chino_chan.Models.Settings.Credentials;
-using Chino_chan.Models.Irc;
 
 namespace Chino_chan
 {
     public class Settings
     {
-        public List<IrcDiscordChannelBinding> LastIRCChannels { get; set; } = new List<IrcDiscordChannelBinding>();
-
         public string OwnerName { get; set; } = "ExModify";
         public UserCredential Owner { get; set; } = new UserCredential();
 

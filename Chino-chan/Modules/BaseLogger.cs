@@ -27,8 +27,7 @@ namespace Chino_chan.Modules
     public enum LogType 
     {
         Discord,
-        IRC,
-        osuAPI,
+        osuApi,
         Language,
         Settings,
         Updater,
