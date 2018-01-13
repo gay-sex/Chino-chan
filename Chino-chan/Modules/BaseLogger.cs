@@ -31,13 +31,16 @@ namespace Chino_chan.Modules
         Language,
         Settings,
         Updater,
+        Commands,
         GC,
         NoDisplay,
         WMI,
         Images,
         Sankaku,
         Imgur,
-        GoogleDrive
+        GoogleDrive,
+        ExternalModules,
+        YouTubeAPI
     }
     public class BaseLogger
     {

@@ -24,9 +24,9 @@ namespace Chino_chan.WebServer
     public enum AuthType
     {
         RequestUserId = 0x01,
-        UserIdRecieved = 0x02,
+        UserIdReceived = 0x02,
         RequestPassword = 0x03,
-        PasswordRecieved = 0x04,
+        PasswordReceived = 0x04,
         Accepted = 0x05,
         Declined = 0x06,
         Unknown
@@ -61,11 +61,11 @@ namespace Chino_chan.WebServer
         Embed = 0x02
     }
 
-    public class RecievedMessageWarning
+    public class ReceivedMessageWarning
     {
         public string Message { get; private set; }
 
-        public RecievedMessageWarning(string Message)
+        public ReceivedMessageWarning(string Message)
         {
             this.Message = Message;
         }
@@ -104,12 +104,12 @@ namespace Chino_chan.WebServer
         }
     }
 
-    public class RecievedMessage
+    public class ReceivedMessage
     {
         public byte[] RawData { get; private set; }
         public MessageType Type { get; private set; }
 
-        public RecievedMessage(byte[] Data)
+        public ReceivedMessage(byte[] Data)
         {
             Type = (MessageType)Data[0];
             Data.CopyTo(RawData, 1);
@@ -120,13 +120,13 @@ namespace Chino_chan.WebServer
             if (Type == MessageType.Auth)
             {
                 var ParsedType = (AuthType)RawData[0];
-                if (ParsedType == AuthType.UserIdRecieved || ParsedType == AuthType.PasswordRecieved)
+                if (ParsedType == AuthType.UserIdReceived || ParsedType == AuthType.PasswordReceived)
                 {
                     return Encoding.UTF8.GetString(RawData, 1, RawData.Length - 1);
                 }
                 else
                 {
-                    return new RecievedMessageWarning($"Unknown auth type recieved: { ParsedType }!");
+                    return new ReceivedMessageWarning($"Unknown auth type Received: { ParsedType }!");
                 }
             }
             else if (Type == MessageType.Clients)
@@ -154,7 +154,7 @@ namespace Chino_chan.WebServer
                 }
             }
 
-            return new RecievedMessageWarning($"Unknown Type: { Type }!");
+            return new ReceivedMessageWarning($"Unknown Type: { Type }!");
         }
     }
     public static class CommunicationHelper

@@ -1,6 +1,6 @@
 ﻿using Chino_chan.Models.Images;
 using Chino_chan.Models.Language;
-using Chino_chan.Models.Privillages;
+using Chino_chan.Models.Privileges;
 using Chino_chan.Models.Settings;
 using Discord;
 using Discord.Commands;
@@ -40,7 +40,7 @@ namespace Chino_chan.Commands
                 for (int i = 0; i < Ids.Count; i++)
                 {
                     IUser User = null;
-                    Color Color = new Color(255, 0, 203);
+                    Color Color = new Color(255, 48, 222);
 
                     if (Context.Guild != null)
                     {
@@ -326,8 +326,147 @@ namespace Chino_chan.Commands
                 }));
             }
         }
+
+        [Command("music"), Summary("Fun"), ServerCommand()]
+        public async Task MusicAsync(params string[] Args)
+        {
+            if (Args.Length > 0)
+            {
+                Args[0] = Args[0].ToLower();
+                
+                if (!Global.MusicClients.TryGetValue(Context.Guild.Id, out Modules.Music Music))
+                {
+                    Music = new Modules.Music
+                    {
+                        Volume = Settings.Music.Volume,
+                        Queue = Settings.Music.Queue
+                    };
+                    Global.MusicClients.Add(Context.Guild.Id, Music);
+                }
+
+                if (Args[0] == "connect" || Args[0] == "c")
+                {
+                    await Music.ConnectAsync(Context);
+                }
+                else if (Args[0] == "disconnect" || Args[0] == "dc")
+                {
+                    await Music.DisconnectAsync(Context);
+                }
+                else if (Args[0] == "play")
+                {
+                    if (Music.State == Modules.PlayerState.Paused)
+                    {
+                        Music.State = Modules.PlayerState.Playing;
+                        return;
+                    }
+                    if (Args.Length > 1)
+                    {
+                        var Link = Args[1];
+                        if (Link.ToLower() == "search")
+                        {
+                            if (Args.Length == 2)
+                            {
+                                await Context.Channel.SendMessageAsync(Context.Prepare(Language.MusicHelp));
+                            }
+                            else
+                            {
+                                var Res = await Music.SearchAsync(string.Join(" ", Args.Skip(2)));
+                                if (Res.Items.Count == 0)
+                                {
+                                    await Context.Channel.SendMessageAsync(Language.MusicNoKeywordMatch);
+                                    return;
+                                }
+                                else
+                                {
+                                    Link = Res.Items[0].Id.VideoId;
+                                }
+                            }
+                        }
+                        if (!Music.Connected)
+                        {
+                            await Music.ConnectAsync(Context);
+                        }
+                        await Music.PlayYoutubeAsync(Context, Link);
+                    }
+                    else
+                    {
+                        if (Music.Queue.Count != 0 && Music.State == Modules.PlayerState.Stopped)
+                        {
+                            await Music.PlayNextItem(Context);
+                        }
+                        else
+                        {
+                            await Context.Channel.SendMessageAsync(Context.Prepare(Language.MusicHelp));
+                        }
+                    }
+                }
+                else if (Args[0] == "pause")
+                {
+                    if (Music.State != Modules.PlayerState.Stopped)
+                    {
+                        Music.State = Modules.PlayerState.Paused;
+                        return;
+                    }
+                }
+                else if (Args[0] == "stop")
+                {
+                    Music.State = Modules.PlayerState.Stopped;
+                }
+                else if (Args[0] == "volume")
+                {
+                    if (Args.Length > 1)
+                    {
+                        if (int.TryParse(Args[1], out int Volume))
+                        {
+                            Global.GuildSettings.Modify(Context.Guild.Id, (Settings) =>
+                            {
+                                Settings.Music.Volume = Volume;
+                            });
+                            Music.ChangeVolume(Volume);
+                        }
+                    }
+                    await Context.Channel.SendMessageAsync(Language.MusicVolume.Prepare(new Dictionary<string, string>()
+                    {
+                        { "%VOLUME%", Music.Volume.ToString() }
+                    }));
+                }
+                else if (Args[0] == "skip")
+                {
+                    Music.Skip();
+                }
+                else if (Args[0] == "list")
+                {
+                    await Music.ListAsync(Context);
+                }
+                else if (Args[0] == "current")
+                {
+                    await Music.SendNowPlayingAsync(Context);
+                }
+                else if (Args[0] == "remove")
+                {
+                    if (Args.Length > 1)
+                    {
+                        if (int.TryParse(Args[1], out int Id))
+                        {
+                            Music.RemoveItem(Context, Id);
+                            
+                            return;
+                        }
+                    }
+                    await Context.Channel.SendMessageAsync(Language.MusicRemoveMissingId);
+                }
+                else
+                {
+                    await Context.Channel.SendMessageAsync(Context.Prepare(Language.MusicHelp));
+                }
+            }
+            else
+            {
+                await Context.Channel.SendMessageAsync(Context.Prepare(Language.MusicHelp));
+            }
+        }
         
-        private async Task<List<string>> Delete(List<string> Filenames)
+        private async Task<List<string>> DeleteAsync(List<string> Filenames)
         {
             var _Filenames = new List<string>(Filenames);
 

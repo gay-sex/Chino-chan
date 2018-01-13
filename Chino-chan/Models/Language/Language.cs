@@ -14,7 +14,6 @@ namespace Chino_chan.Models.Language
 
         public string NameSafety { get; set; } = "Be careful with the nicknames and the usernames, because if there're more than one people with the same name, the found person may not be the one you want!";
 
-
         public string InfoHeader { get; set; } = "Information about me";
         public string MemoryUsageHeader { get; set; } = "Memory Usage";
         public string DiscordLibraryHeader { get; set; } = "Discord Library";
@@ -50,6 +49,12 @@ namespace Chino_chan.Models.Language
         public string Sfw { get; set; } = "sfw";
         public string On { get; set; } = "on";
         public string Off { get; set; } = "off";
+        public string Uploaded { get; set; } = "Uploaded";
+        public string Title { get; set; } = "Title";
+        public string Length { get; set; } = "Length";
+        public string Queue { get; set; } = "Queue";
+        public string Url { get; set; } = "Url";
+        public string Thumbnail { get; set; } = "Thumbnail";
 
         public string OnlyNsfw { get; set; } = "This command can only be invoked in private and nsfw channels, sorry :<";
         public string OnlyServer { get; set; } = "Sorry, but this is only a server-side command :c";
@@ -152,6 +157,38 @@ namespace Chino_chan.Models.Language
         public string UserNotFound { get; set; } = "Sorry, but I couldn't find any users with this identifier: %IDENTIFIER%";
 
         public string NoImages { get; set; } = "Sorry, but I couldn't find any images with these tags: `%TAGS%` :c";
+
+        public string MusicHelp { get; set; } = "```css\n" +
+                                                "[Connection]\n" +
+                                                "%P%music connect / c - connects to the voice channel where you are if not connected\n" +
+                                                "%P%music disconnect / dc - disconnect from the voice channel - only admins\n\n" +
+                                                "[Management]\n" +
+                                                "%P%music play (youtube link or id) - adds a YouTube video, or resumes the current if it's written without parameters~\n" +
+                                                "%P%music play search [keyword] - searches for a YouTube video and adds to the queue [Currently the first match is selected]\n" +
+                                                "%P%music stop - Stops the current music playing\n" +
+                                                "%P%music pause - Pauses the current music playing\n" +
+                                                "%P%music volume - Resumes the current music playing\n" +
+                                                "%P%music skip - Skips the current music\n" +
+                                                "%P%music list - Lists the first 5 item of the Queue\n" +
+                                                "%P%music current - Displays info about the current played song" +
+                                                "```";
+        public string MusicConnected { get; set; } = "Connected to %VOICE%~";
+        public string MusicCannotConnect { get; set; } = "I can't connect to the voice channel, please join into one!";
+        public string MusicDisconnect { get; set; } = "I've disconnected from the voice channel~";
+        public string MusicNotConnected { get; set; } = "I'm not connected to any of the voice channels here :(";
+        public string MusicNotPlaying { get; set; } = "There's nothing played currently, sorry :c";
+        public string MusicStopped { get; set; } = "Playing stopped";
+        public string MusicFinishedQueue { get; set; } = "Playing finished the queue~";
+        public string MusicEmptyQueue { get; set; } = "The queue is empty :(";
+        public string MusicPaused { get; set; } = "Paused";
+        public string MusicResumed { get; set; } = "Resumed";
+        public string MusicVolume { get; set; } = "The current volume is %VOLUME%%~";
+        public string MusicNoKeywordMatch { get; set; } = "Sorry, but I couldn't find anything with these keywords!";
+        public string MusicPlaying { get; set; } = "Now playing";
+        public string MusicRemoveMissingId { get; set; } = "Please provide the number of queue item to remove it~";
+        public string MusicStillDownloading { get; set; } = "The next music is still downloading, please wait~";
+        public string MusicYouTubeNotValidUrl { get; set; } = "Sorry, but it's not a valid url to provide :c I only accept available YouTube videos to play~";
+        public string MusicCouldnotDownload { get; set; } = "Coudln't download the music file, sorry!";
         #endregion
         #region Information
         public string HasNoGit { get; set; } = "Sorry, but I can't give it to you :c";
@@ -195,6 +232,7 @@ namespace Chino_chan.Models.Language
             { "delete", "Simple delete sytem owo" },
             { "setnsfw", "Add or remove the channel from nsfw zone *doesn't override the nsfw channel mark of Discord*" },
             { "say", "Basic say command~" },
+            { "music", "Music part of me uwu" },
 
             { "info", "Some info about me o//o" },
             { "serverinfo", "Some information of the environment where I am owo" },

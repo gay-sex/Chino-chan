@@ -53,17 +53,7 @@ namespace Chino_chan
             {
                 Setting = new GuildSetting()
                 {
-                    Admins = new List<UserCredential>(),
-                    Blocked = new List<BlockedUser>(),
-                    CurrentPlaying = "",
-                    FromQuery = false,
-                    GuildId = GuildId,
-                    LanguageId = "en",
-                    MusicPosition = -1,
-                    Prefix = "$",
-                    NsfwChannels = new List<ulong>(),
-                    Query = new List<string>(),
-                    Volume = 50
+                    GuildId = GuildId
                 };
                 Settings.Add(GuildId, Setting);
                 Save();

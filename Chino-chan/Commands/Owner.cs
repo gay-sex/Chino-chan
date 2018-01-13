@@ -1,12 +1,9 @@
 ﻿using Chino_chan.Models.Language;
-using Chino_chan.Models.Privillages;
 using Chino_chan.Models.Settings;
 using Discord;
 using Discord.Commands;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Chino_chan.Commands
@@ -28,16 +25,16 @@ namespace Chino_chan.Commands
             }
         }
 
-        [Command("game"), Summary("Owner"), Models.Privillages.Owner()]
+        [Command("game"), Summary("Owner"), Models.Privileges.Owner()]
         public async Task GameAsync(params string[] Args)
         {
             if (Args.Length == 0)
             {
-                if (!string.IsNullOrWhiteSpace(Context.Client.CurrentUser.Activity.Name))
+                if (Context.Client.CurrentUser.Game.HasValue)
                 {
                     await Context.Channel.SendMessageAsync(Language.Game.Prepare(new Dictionary<string, string>()
                     {
-                        { "%GAME%", Context.Client.CurrentUser.Activity.Name }
+                        { "%GAME%", Context.Client.CurrentUser.Game.Value.Name }
                     }));
                 }
                 else
@@ -50,19 +47,19 @@ namespace Chino_chan.Commands
                 await Global.Client.SetGameAsync(string.Join(" ", Args));
                 await Context.Channel.SendMessageAsync(Language.Game.Prepare(new Dictionary<string, string>()
                 {
-                    { "%GAME%", Context.Client.CurrentUser.Activity.Name }
+                    { "%GAME%", Context.Client.CurrentUser.Game.Value.Name }
                 }));
             }
         }
 
-        [Command("restart"), Summary("Owner"), Models.Privillages.Owner()]
+        [Command("restart"), Summary("Owner"), Models.Privileges.Owner()]
         public async Task ReloadAsync(params string[] Args)
         {
             await Context.Channel.SendMessageAsync(Language.Restarting);
             Entrance.Reload(Context.Channel as ITextChannel);
         }
 
-        [Command("shutdown"), Summary("Owner"), Models.Privillages.Owner()]
+        [Command("shutdown"), Summary("Owner"), Models.Privileges.Owner()]
         public async Task ShutdownAsync(params string[] Args)
         {
             await Context.Channel.SendMessageAsync(Language.Shutdown);
@@ -70,7 +67,7 @@ namespace Chino_chan.Commands
             Environment.Exit(exitCode: 0);
         }
 
-        [Command("update"), Summary("Owner"), Models.Privillages.Owner()]
+        [Command("update"), Summary("Owner"), Models.Privileges.Owner()]
         public async Task UpdateAsync(params string[] Args)
         {
             if (Global.Updater.Update())

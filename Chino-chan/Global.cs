@@ -19,6 +19,9 @@ using Troschuetz.Random.Generators;
 using Google.Apis.Drive.v2;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
+using System.Net;
+using System.IO.Compression;
+using Google.Apis.YouTube.v3;
 
 namespace Chino_chan
 {
@@ -150,6 +153,7 @@ namespace Chino_chan
         public static Sankaku Sankaku { get; private set; }
 
         public static DriveService GoogleDrive { get; private set; }
+        public static YouTubeService YouTube { get; private set; }
 
         public static Image.Imgur Imgur { get; private set; }
         
@@ -174,6 +178,8 @@ namespace Chino_chan
         public static Updater Updater { get; private set; }
         
         public static osuApi osuAPI { get; private set; }
+        
+        public static Dictionary<ulong, Modules.Music> MusicClients { get; private set; }
 
         public static void Setup()
         {
@@ -181,6 +187,8 @@ namespace Chino_chan
             Random = new TRandom(new NR3Generator(TMath.Seed()));
             Logger = new BaseLogger();
             Logger.Log(ConsoleColor.Cyan, LogType.NoDisplay, "Info", "Welcome to Chino-chan!");
+
+            CheckExternalLibs();
 
             LoadSettings();
 
@@ -193,6 +201,7 @@ namespace Chino_chan
             {
                 Sankaku = new Sankaku(Settings.Credentials.Sankaku.Username, Settings.Credentials.Sankaku.Password);
             }
+            
             if (!string.IsNullOrWhiteSpace(Settings.Credentials.Imgur.ClientId)
              && !string.IsNullOrWhiteSpace(Settings.Credentials.Imgur.ClientSecret))
             {
@@ -216,12 +225,25 @@ namespace Chino_chan
                 });
                 Logger.Log(ConsoleColor.Green, LogType.GoogleDrive, null, "Logged in!");
             }
+
+            if (!string.IsNullOrWhiteSpace(Settings.Credentials.Google.Token))
+            {
+                Logger.Log(ConsoleColor.Red, LogType.YouTubeAPI, null, "Creating YouTube service...");
+
+                YouTube = new YouTubeService(new BaseClientService.Initializer()
+                {
+                    ApiKey = Settings.Credentials.Google.Token,
+                    ApplicationName = "Chino-chan"
+                });
+
+                Logger.Log(ConsoleColor.Red, LogType.YouTubeAPI, null, "Done!");
+            }
             
             LanguageHandler = new LanguageHandler();
             GuildSettings = new GuildSettings();
             
             Updater = new Updater();
-
+            
             Client = new DiscordSocketClient(new DiscordSocketConfig()
             {
                 AlwaysDownloadUsers = true,
@@ -266,10 +288,10 @@ namespace Chino_chan
                 DefaultRunMode = RunMode.Async
             });
 
-            Logger.Log(ConsoleColor.Cyan, LogType.Updater, null, "Loading Commands...");
+            Logger.Log(ConsoleColor.Cyan, LogType.Commands, null, "Loading Commands...");
             CommandService.AddModulesAsync(Assembly.GetEntryAssembly()).ContinueWith((ModuleInfo) =>
             {
-                Logger.Log(ConsoleColor.Cyan, LogType.Updater, null, "Loaded Commands!");
+                Logger.Log(ConsoleColor.Cyan, LogType.Commands, null, "Loaded Commands!");
                 var Modules = ModuleInfo.Result;
                 var Text = "";
                 var HelpNotFound = new List<string>();
@@ -288,10 +310,10 @@ namespace Chino_chan
                         }
                     }
                 }
-                Logger.Log(ConsoleColor.Cyan, LogType.Updater, null, "Available modules and commands: " + Text);
+                Logger.Log(ConsoleColor.Cyan, LogType.Commands, null, "Available modules and commands: " + Text);
                 if (HelpNotFound.Count != 0)
                 {
-                    Logger.Log(ConsoleColor.Cyan, LogType.Updater, "Warning", "Help not found for these commands: " + string.Join(", ", HelpNotFound));
+                    Logger.Log(ConsoleColor.Cyan, LogType.Commands, "Warning", "Help not found for these commands: " + string.Join(", ", HelpNotFound));
                 }
             });
 
@@ -412,6 +434,10 @@ namespace Chino_chan
                             {
                                 await Context.Channel.SendMessageAsync(Context.GetLanguage().NoOwnerPermission);
                             }
+                            else if (Result.ErrorReason == "ServerSide")
+                            {
+                                await Context.Channel.SendMessageAsync(Context.GetLanguage().OnlyServer);
+                            }
                             else
                             {
                                 await Context.Channel.SendMessageAsync(Context.GetLanguage().NoPermission);
@@ -432,10 +458,12 @@ namespace Chino_chan
                 }
                 else
                 {
-                    Logger.Log(ConsoleColor.DarkYellow, LogType.Updater, Context.Guild != null ? Context.Guild.Name : Context.Channel.Name, $"#{ Context.Channel.Name } { Context.User.Username } executed { Context.Message.Content }");
+                    Logger.Log(ConsoleColor.DarkYellow, LogType.Commands, Context.Guild != null ? Context.Guild.Name : Context.Channel.Name, $"#{ Context.Channel.Name } { Context.User.Username } executed { Context.Message.Content }");
                 }
             };
-            
+
+            MusicClients = new Dictionary<ulong, Modules.Music>();
+
             Stopwatch Watch = new Stopwatch();
             Watch.Start();
             var Searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Processor");
@@ -466,7 +494,109 @@ namespace Chino_chan
         {
             await Client.LoginAsync(TokenType.Bot, Settings.Credentials.Discord.Token);
             await Client.StartAsync();
-            
+        }
+
+        private static void CheckExternalLibs()
+        {
+            Logger.Log(ConsoleColor.Blue, LogType.ExternalModules, null, "Checking external modules...");
+            if (!File.Exists("External\\ffmpeg\\ffmpeg.exe"))
+            {
+                Logger.Log(ConsoleColor.DarkYellow, LogType.ExternalModules, "FFMpeg", "FFMpeg is missing, downloading...");
+
+                if (Directory.Exists("External\\ffmpeg\\Extracted"))
+                    Directory.Delete("External\\ffmpeg\\Extracted", true);
+
+                Directory.CreateDirectory("External\\ffmpeg\\Extracted");
+                var Link = "https://ffmpeg.zeranoe.com/builds/win32/static/ffmpeg-3.4.1-win32-static.zip";
+                var Client = new WebClient();
+                Client.DownloadFile(Link, "External\\ffmpeg\\ffmpeg.zip");
+                if (File.Exists("External\\ffmpeg\\ffmpeg.zip"))
+                {
+                    Logger.Log(ConsoleColor.Blue, LogType.ExternalModules, "FFMpeg", "Downloaded, extracting...");
+                    ZipFile.ExtractToDirectory("External\\ffmpeg\\ffmpeg.zip", "External\\ffmpeg\\Extracted");
+                    var Enumerate = Directory.EnumerateFiles("External\\ffmpeg\\Extracted", "ffmpeg.exe", SearchOption.AllDirectories);
+
+                    var Count = Enumerate.Count();
+                    if (Count == 0)
+                    {
+                        Logger.Log(ConsoleColor.Red, LogType.ExternalModules, "FFMpeg", "Couldn't find no more than ffmpeg executable from the downloaded and extracted folder! Please install it manually, to \"External\\ffmpeg\"");
+                        Console.WriteLine("Press any key to exit...");
+                        Console.ReadKey();
+                        Environment.Exit(exitCode: 0);
+                    }
+
+                    var FFMpeg = Enumerate.First();
+
+                    File.Move(FFMpeg, "External\\ffmpeg\\ffmpeg.exe");
+
+                    File.Delete("External\\ffmpeg\\ffmpeg.zip");
+                    Directory.Delete("External\\ffmpeg\\Extracted", true);
+
+                    Logger.Log(ConsoleColor.Blue, LogType.ExternalModules, "FFMpeg", "FFMpeg module is ready!");
+                }
+                else
+                {
+                    Logger.Log(ConsoleColor.Red, LogType.ExternalModules, "FFMpeg", "Couldn't download FFMpeg, please install it manually! Copy ffmpeg.exe into \"External\\ffmpeg\" folder!");
+                    Console.WriteLine("Press any key to exit...");
+                    Console.ReadKey();
+                    Environment.Exit(exitCode: 0);
+                }
+            }
+            if (!File.Exists("External\\ytdl\\ytdl.exe"))
+            {
+                Logger.Log(ConsoleColor.DarkYellow, LogType.ExternalModules, "ytdl", "ytdl is missing, downloading...");
+                Directory.CreateDirectory("External\\ytdl");
+                var Link = "https://yt-dl.org/downloads/2017.12.31/youtube-dl.exe";
+                var Client = new WebClient();
+                Client.DownloadFile(Link, "External\\ytdl\\ytdl.exe");
+                if (File.Exists("External\\ytdl\\ytdl.exe"))
+                {
+                    Logger.Log(ConsoleColor.Blue, LogType.ExternalModules, "ytdl", "ytdl module is ready!");
+                }
+                else
+                {
+                    Logger.Log(ConsoleColor.Red, LogType.ExternalModules, "ytdl", "Couldn't download ytdl, please install it manually! Copy ytdl.exe into \"External\\ytdl\" folder!");
+                    Console.WriteLine("Press any key to exit...");
+                    Console.ReadKey();
+                    Environment.Exit(exitCode: 0);
+                }
+            }
+            if (!File.Exists("libsodium.dll"))
+            {
+                Logger.Log(ConsoleColor.DarkYellow, LogType.ExternalModules, "Sodium", "Sodium is missing, downloading...");
+                var Link = "https://exmodify.s-ul.eu/LG7gOj3D.dll";
+                var Client = new WebClient();
+                Client.DownloadFile(Link, "libsodium.dll");
+                if (File.Exists("libsodium.dll"))
+                {
+                    Logger.Log(ConsoleColor.Blue, LogType.ExternalModules, "Sodium", "Sodium module is ready!");
+                }
+                else
+                {
+                    Logger.Log(ConsoleColor.Red, LogType.ExternalModules, "Sodium", "Couldn't download Sodium, please install it manually! Copy Sodium.dll into the main folder!");
+                    Console.WriteLine("Press any key to exit...");
+                    Console.ReadKey();
+                    Environment.Exit(exitCode: 0);
+                }
+            }
+            if (!File.Exists("opus.dll"))
+            {
+                Logger.Log(ConsoleColor.DarkYellow, LogType.ExternalModules, "Opus", "Opus is missing, downloading...");
+                var Link = "https://exmodify.s-ul.eu/WaiYfJBZ.dll";
+                var Client = new WebClient();
+                Client.DownloadFile(Link, "opus.dll");
+                if (File.Exists("opus.dll"))
+                {
+                    Logger.Log(ConsoleColor.Blue, LogType.ExternalModules, "Opus", "Opus module is ready!");
+                }
+                else
+                {
+                    Logger.Log(ConsoleColor.Red, LogType.ExternalModules, "Opus", "Couldn't download Opus, please install it manually! Copy Opus.dll into the main folder!");
+                    Console.WriteLine("Press any key to exit...");
+                    Console.ReadKey();
+                    Environment.Exit(exitCode: 0);
+                }
+            }
         }
 
         public static async Task StopAsync()

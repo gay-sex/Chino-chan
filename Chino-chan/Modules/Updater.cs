@@ -1,14 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Text.RegularExpressions;
 using Google.Apis.Download;
 
 namespace Chino_chan.Modules
@@ -54,7 +47,6 @@ namespace Chino_chan.Modules
                 try
                 {
                     Directory.Delete("Update", true);
-                    Directory.CreateDirectory("Update");
                 }
                 catch (IOException)
                 {
@@ -62,10 +54,8 @@ namespace Chino_chan.Modules
                     return false;
                 }
             }
-            else
-            {
-                Directory.CreateDirectory("Update");
-            }
+
+            Directory.CreateDirectory("Update");
 
             var Files = Global.GoogleDrive.Files.List().Execute().Items;
 

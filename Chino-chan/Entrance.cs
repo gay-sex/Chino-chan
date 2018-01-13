@@ -29,6 +29,7 @@ namespace Chino_chan
             {
                 await Global.Client.SetStatusAsync(UserStatus.Online);
                 await Global.Client.SetGameAsync(Global.Settings.Game);
+                
                 await Global.Client.DownloadUsersAsync(Global.Client.Guilds);
                 
                 if (Restarted != null)

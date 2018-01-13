@@ -1,5 +1,5 @@
 ﻿using Chino_chan.Models.Language;
-using Chino_chan.Models.Privillages;
+using Chino_chan.Models.Privileges;
 using Chino_chan.Models.Settings;
 using Discord;
 using Discord.Commands;
@@ -161,7 +161,7 @@ namespace Chino_chan.Commands
             }
         }
 
-        [Command("rlang"), Summary("Management"), Models.Privillages.Owner()]
+        [Command("rlang"), Summary("Management"), Models.Privileges.Owner()]
         public async Task ReloadLanguages(params string[] NoError)
         {
             Global.LanguageHandler.LoadLanguages();

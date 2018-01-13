@@ -10,10 +10,10 @@ namespace Chino_chan.WebServer
 {
     public class Client
     {
-        public delegate void OnDataRecieved(RecievedMessage Message);
+        public delegate void OnDataReceived(ReceivedMessage Message);
 
         public event Action Disconnected;
-        public event OnDataRecieved DataRecieved;
+        public event OnDataReceived DataReceived;
 
         private Thread ListeningThread { get; set; }
 
@@ -38,9 +38,9 @@ namespace Chino_chan.WebServer
                     var Data = new List<ArraySegment<byte>>();
                     Socket.Receive(Data);
 
-                    var RecievedData = Data.SelectMany(t => t).ToArray();
+                    var ReceivedData = Data.SelectMany(t => t).ToArray();
 
-                    DataRecieved?.Invoke(new RecievedMessage(RecievedData));
+                    DataReceived?.Invoke(new ReceivedMessage(ReceivedData));
                 }
                 catch (SocketException)
                 {

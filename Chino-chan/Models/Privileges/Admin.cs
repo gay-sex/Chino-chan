@@ -5,18 +5,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Chino_chan.Models.Privillages
+namespace Chino_chan.Models.Privileges
 {
-    public class GlobalAdmin : PreconditionAttribute
+    public class Admin : PreconditionAttribute
     {
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
-            if (Global.IsGlobalAdminOrHigher(context.User.Id))
+            if (Global.IsAdminOrHigher(context.User.Id, context.Guild.Id))
             {
                 return Task.Run(() => PreconditionResult.FromSuccess());
             }
-            return Task.Run(() => PreconditionResult.FromError("GlobalAdmin"));
+            return Task.Run(() => PreconditionResult.FromError("Admin"));
         }
-        
     }
 }

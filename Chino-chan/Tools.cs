@@ -1,12 +1,9 @@
 ﻿using Chino_chan.Models.Settings;
 using Discord;
 using Discord.Commands;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Chino_chan
 {
@@ -158,7 +155,7 @@ namespace Chino_chan
 
                 foreach (var User in Users)
                 {
-                    if (ulong.TryParse(Part, out ulong ParsedId))
+                    if (ulong.TryParse(Part, out ulong ParsedId) || (ParsedId = GetHlId(Part)) != 0)
                     {
                         if (User.Id == ParsedId)
                         {
@@ -169,14 +166,14 @@ namespace Chino_chan
                     }
                     if (!string.IsNullOrWhiteSpace(User.Nickname))
                     {
-                        if (User.Nickname.ToLower() == Part)
+                        if (User.Nickname.ToLower() == Part || (User.Nickname.ToLower().StartsWith(Part) && Part.Trim() != ""))
                         {
                             ReturnedUsers.Add(User);
                             Part = "";
                             continue;
                         }
                     }
-                    if (User.Username.ToLower() == Part)
+                    if (User.Username.ToLower() == Part || (User.Username.ToLower().StartsWith(Part) && Part.Trim() != ""))
                     {
                         ReturnedUsers.Add(User);
                         Part = "";
@@ -185,6 +182,16 @@ namespace Chino_chan
                 }
             }
             return ReturnedUsers;
+        }
+
+        private static ulong GetHlId(string Highlight)
+        {
+            var Search = new Regex("<@!?(\\d*)>");
+            foreach (Match Match in Search.Matches(Highlight))
+            {
+                return ulong.Parse(Match.Groups[1].Value);
+            }
+            return 0;
         }
     }
 }
