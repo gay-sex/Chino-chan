@@ -14,7 +14,7 @@ namespace Chino_chan
     public class Entrance
     {
         static Thread CommandThread;
-        static ITextChannel Restarted;
+        static ITextChannel ReloadedChannel;
 
         public static void Main(string[] args)
         {
@@ -32,10 +32,10 @@ namespace Chino_chan
                 
                 await Global.Client.DownloadUsersAsync(Global.Client.Guilds);
                 
-                if (Restarted != null)
+                if (ReloadedChannel != null)
                 {
-                    await Restarted.SendMessageAsync(Restarted.GetLanguage().Restarted);
-                    Restarted = null;
+                    await ReloadedChannel.SendMessageAsync(ReloadedChannel.GetLanguage().Reloaded);
+                    ReloadedChannel = null;
                 }
             };
 
@@ -87,7 +87,7 @@ namespace Chino_chan
                 if (Channel != null)
                     Channel.SendMessageAsync(
                         Global.LanguageHandler.GetLanguage(
-                            Global.GuildSettings.GetSettings(Channel.GuildId).LanguageId).Reload).Wait();
+                            Global.GuildSettings.GetSettings(Channel.GuildId).LanguageId).Reloading).Wait();
 
                 Reload(Channel);
             }
@@ -114,7 +114,7 @@ namespace Chino_chan
             {
                 Global.StopAsync().Wait();
                 Console.Clear();
-                Restarted = Channel;
+                ReloadedChannel = Channel;
                 Main(new string[0]);
             });
         }

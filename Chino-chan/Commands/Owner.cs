@@ -4,6 +4,8 @@ using Discord;
 using Discord.Commands;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Chino_chan.Commands
@@ -79,6 +81,47 @@ namespace Chino_chan.Commands
             else
             {
                 await Context.Channel.SendMessageAsync(Language.UpdateError);
+            }
+        }
+
+        [Command("set"), Summary("Owner"), Models.Privileges.Owner()]
+        public async Task SetAsync(params string[] Args)
+        {
+            if (Args.Length >= 2)
+            {
+                var Type = Global.Settings.GetType();
+                var Properties = Type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+                foreach (var Property in Properties)
+                {
+                    if (Property.Name.ToLower() == Args[0].ToLower())
+                    {
+                        Property.SetValue(Global.Settings, string.Join(" ", Args.Skip(1)));
+                        await Context.Channel.SendMessageAsync($"{ Property.Name }: `{ Property.GetValue(Global.Settings) }`");
+                        break;
+                    }
+                }
+            }
+        }
+
+        [Command("get"), Summary("Owner"), Models.Privileges.Owner()]
+        public async Task GetAsync(params string[] Args)
+        {
+            if (Args.Length == 1)
+            {
+                var Type = typeof(Settings);
+                var Properties = Type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+                foreach (var Property in Properties)
+                {
+                    if (Property.Name.ToLower() == Args[0].ToLower())
+                    {
+                        var Content = JsonConvert.SerializeObject(Property.GetValue(Global.Settings), Formatting.Indented);
+
+                        await Context.Channel.SendMessageAsync($"{ Property.Name }: `{ Content }`");
+                        break;
+                    }
+                }
             }
         }
     }

@@ -203,10 +203,10 @@ namespace Chino_chan.Models.Language
         public string NoGame { get; set; } = "I'm not playing qwq";
 
         public string Restarting { get; set; } = "Restarting..";
-        public string Restarted { get; set; } = "Restarted owo";
+        public string Reloaded { get; set; } = "Reloaded owo";
 
         public string Shutdown { get; set; } = "I'm going offline :< Bye~";
-        public string Reload { get; set; } = "Reloading, please wait~";
+        public string Reloading { get; set; } = "Reloading, please wait~";
         #endregion
 
         public Dictionary<string, string> Help { get; set; } = new Dictionary<string, string>()
