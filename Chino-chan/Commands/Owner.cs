@@ -2,6 +2,7 @@
 using Chino_chan.Models.Settings;
 using Discord;
 using Discord.Commands;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
