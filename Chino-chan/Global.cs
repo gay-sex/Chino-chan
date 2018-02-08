@@ -25,84 +25,6 @@ using Google.Apis.YouTube.v3;
 
 namespace Chino_chan
 {
-    public class CPUInfo
-    {
-        private ManagementObjectSearcher Searcher { get; set; }
-
-        public string Name { get; private set; }
-        public string Socket { get; private set; }
-        public string Description { get; private set; }
-        public uint Speed { get; private set; }
-        public uint L2 { get; private set; }
-        public uint L3 { get; private set; }
-        public uint Cores { get; private set; }
-        public uint Threads { get; private set; }
-        public ulong Percentage
-        {
-            get
-            {
-                var CPUPref = Searcher.Get().Cast<ManagementBaseObject>().FirstOrDefault();
-                return (ulong)CPUPref["PercentProcessorTime"];
-            }
-        }
-
-        public CPUInfo(ManagementBaseObject Info)
-        {
-            Socket = (string)Info["SocketDesignation"];
-            Name = ((string)Info["Name"]).Replace("  ", " ");
-            Description = (string)Info["Caption"];
-            Speed = (uint)Info["MaxClockSpeed"];
-            L2 = (uint)Info["L2CacheSize"];
-            L3 = (uint)Info["L3CacheSize"];
-            Cores = (uint)Info["NumberOfCores"];
-            Threads = (uint)Info["NumberOfLogicalProcessors"];
-
-            Searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PerfFormattedData_PerfOS_Processor");
-        }
-    }
-    public class OsInfo
-    {
-        public string Name { get; private set; }
-        public string Version { get; private set; }
-        public string Architecture { get; private set; }
-
-        public OsInfo(ManagementBaseObject Info)
-        {
-            Name = ((string)Info["Caption"]).Trim();
-            Version = (string)Info["Version"];
-            Architecture = (string)Info["OSArchitecture"];
-        }
-    }
-    public class MemInfo
-    {
-        private PerformanceCounter Counter { get; set; }
-
-        public ulong TotalMemory { get; private set; }
-        public float CurrentMemory
-        {
-            get
-            {
-                return Counter.NextValue();
-            }
-        }
-
-        public MemInfo(ManagementBaseObject Info)
-        {
-            TotalMemory = (ulong)Info["TotalPhysicalMemory"];
-            Counter = new PerformanceCounter("Memory", "Available MBytes", true);
-        }
-    }
-    public class VideoCardInfo
-    {
-        public string Name { get; private set; }
-        public uint RAM { get; private set; }
-
-        public VideoCardInfo(ManagementBaseObject Info)
-        {
-            Name = (string)Info["Name"];
-            RAM = (uint)Info["AdapterRAM"];
-        }
-    }
     public static class Global
     {
         private static TimeSpan StartedTime;
@@ -140,8 +62,10 @@ namespace Chino_chan
         public static Settings Settings { get; private set; }
         public static GuildSettings GuildSettings { get; private set; }
         public static LanguageHandler LanguageHandler { get; private set; }
+
         public static DiscordSocketClient Client { get; private set; }
         public static CommandService CommandService { get; private set; }
+
         public static BaseLogger Logger { get; private set; }
         public static TRandom Random { get; private set; }
 
@@ -157,10 +81,7 @@ namespace Chino_chan
 
         public static Image.Imgur Imgur { get; private set; }
         
-        public static CPUInfo CPU { get; private set; }
-        public static OsInfo OS { get; private set; }
-        public static MemInfo MemInfo { get; private set; }
-        public static VideoCardInfo VideoCardInfo { get; private set; }
+        public static SysInfo SysInfo { get; private set; }
 
         public static SocketTextChannel JunkChannel
         {
@@ -212,15 +133,16 @@ namespace Chino_chan
              && !string.IsNullOrWhiteSpace(Settings.Credentials.Google.ClientId))
             {
                 Logger.Log(ConsoleColor.Green, LogType.GoogleDrive, null, "Logging into GoogleDrive...");
+                /*
                 var Credential = GoogleWebAuthorizationBroker.AuthorizeAsync(new ClientSecrets()
                 {
                     ClientId = Settings.Credentials.Google.ClientId,
                     ClientSecret = Settings.Credentials.Google.ClientSecret
                 }, new string[] { DriveService.Scope.Drive }, "user", CancellationToken.None).Result;
-                
+                */
                 GoogleDrive = new DriveService(new BaseClientService.Initializer()
                 {
-                    HttpClientInitializer = Credential,
+                    //HttpClientInitializer = Credential,
                     ApplicationName = "Chino-chan"
                 });
                 Logger.Log(ConsoleColor.Green, LogType.GoogleDrive, null, "Logged in!");
@@ -259,20 +181,17 @@ namespace Chino_chan
             };
             Client.Ready += () =>
             {
-                new Task(() =>
+                Logger.Log(ConsoleColor.DarkYellow, LogType.Sankaku, "Login", "Logging in...");
+                var LoggedIn = Sankaku.Login(out bool TooManyRequests);
+                if (LoggedIn)
                 {
-                    Logger.Log(ConsoleColor.DarkYellow, LogType.Sankaku, "Login", "Logging in...");
-                    var LoggedIn = Sankaku.Login(out bool TooManyRequests);
-                    if (LoggedIn)
-                    {
-                        Logger.Log(ConsoleColor.DarkYellow, LogType.Sankaku, "Login", "Logged in!");
-                    }
-                    else
-                    {
-                        Logger.Log(ConsoleColor.Red, LogType.Sankaku, "Login", "Couldn't log in due to " + (TooManyRequests ? "rate limitation!" : "wrong credentials!"));
-                    }
-                }).Start();
-                
+                    Logger.Log(ConsoleColor.DarkYellow, LogType.Sankaku, "Login", "Logged in!");
+                }
+                else
+                {
+                    Logger.Log(ConsoleColor.Red, LogType.Sankaku, "Login", "Couldn't log in due to " + (TooManyRequests ? "rate limitation!" : "wrong credentials!"));
+                }
+
                 return Task.CompletedTask;
             };
             
@@ -464,30 +383,8 @@ namespace Chino_chan
 
             MusicClients = new Dictionary<ulong, Modules.Music>();
 
-            Stopwatch Watch = new Stopwatch();
-            Watch.Start();
-            var Searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Processor");
-
-            CPU = new CPUInfo(Searcher.Get().Cast<ManagementBaseObject>().FirstOrDefault());
-            Logger.Log(ConsoleColor.Cyan, LogType.WMI, null, "Loading Processor data took " + Watch.ElapsedMilliseconds + "ms");
-
-            Watch.Restart();
-            Searcher.Query = new ObjectQuery("SELECT * FROM Win32_OperatingSystem");
-            OS = new OsInfo(Searcher.Get().Cast<ManagementBaseObject>().FirstOrDefault());
-            Logger.Log(ConsoleColor.Cyan, LogType.WMI, null, "Loading Operating System data took " + Watch.ElapsedMilliseconds + "ms");
-
-            Watch.Restart();
-            Searcher.Query = new ObjectQuery("SELECT * FROM Win32_ComputerSystem");
-            MemInfo = new MemInfo(Searcher.Get().Cast<ManagementBaseObject>().FirstOrDefault());
-            Logger.Log(ConsoleColor.Cyan, LogType.WMI, null, "Loading Computer System data took " + Watch.ElapsedMilliseconds + "ms");
-            
-            Watch.Restart();
-            Searcher.Query = new ObjectQuery("SELECT * FROM Win32_VideoController");
-            VideoCardInfo = new VideoCardInfo(Searcher.Get().Cast<ManagementBaseObject>().FirstOrDefault());
-            Logger.Log(ConsoleColor.Cyan, LogType.WMI, null, "Loading Video card data took " + Watch.ElapsedMilliseconds + "ms");
-            Watch.Stop();
-
-            Watch = null;
+            SysInfo = new SysInfo();
+            SysInfo.Load();
         }
 
         public static async Task StartAsync()

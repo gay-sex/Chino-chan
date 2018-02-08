@@ -196,6 +196,7 @@ namespace Chino_chan.Models.Language
 
         public string HasNoInvitationLink { get; set; } = "Sorry, but I can't send any invite links :c";
         public string InvitationDescription { get; set; } = "Click on my name to invite me~";
+        public string WMINotSupported { get; set; } = "Sorry, but I can't do this in the current server :<";
         #endregion
         #region Owner
         public string Game { get; set; } = "My game is %GAME% owo";

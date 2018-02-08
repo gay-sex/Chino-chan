@@ -6,6 +6,7 @@ using Discord.Commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Chino_chan.Commands
@@ -635,6 +636,9 @@ namespace Chino_chan.Commands
                 if (Args.Length > 1)
                     Value = string.Join(" ", Args.Skip(1));
 
+                string Message = null;
+                ITextChannel txtChannel = Context.Channel as ITextChannel;
+                
                 if (Option == "listen")
                 {
                     if (ulong.TryParse(Value, out ulong ChannelId))
@@ -729,14 +733,23 @@ namespace Chino_chan.Commands
                 {
                     if (Global.Client.GetChannel(Id) is ITextChannel Channel)
                     {
-                        await Channel.SendMessageAsync(string.Join(" ", Args.Skip(1)));
-                        await SayAutoDeleteAsync();
-                        return;
+                        txtChannel = Channel;
+                        Message = string.Join(" ", Args.Skip(1));
+                    }
+                    else
+                    {
+                        Message = string.Join(" ", Args);
                     }
                 }
                 else
                 {
-                    await Context.Channel.SendMessageAsync(string.Join(" ", Args));
+                    Message = string.Join(" ", Args);
+                }
+
+                if (Message != null)
+                {
+                    var Regex = new Regex("");
+                    await txtChannel.SendMessageAsync(Message);
                     await SayAutoDeleteAsync();
                     return;
                 }
