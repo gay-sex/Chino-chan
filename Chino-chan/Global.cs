@@ -385,6 +385,9 @@ namespace Chino_chan
 
             SysInfo = new SysInfo();
             SysInfo.Load();
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
 
         public static async Task StartAsync()
@@ -615,8 +618,11 @@ namespace Chino_chan
         }
         public static bool IsNsfwChannel(GuildSetting GuildSettings, ulong ChannelId)
         {
-            return GuildSettings.NsfwChannels.Contains(ChannelId)
-                || (bool)(Client.GetChannel(ChannelId) as ITextChannel)?.IsNsfw;
+            if (GuildSettings.NsfwChannels.Contains(ChannelId))
+                return true;
+            if (Client.GetChannel(ChannelId) is ITextChannel Channel)
+                return Channel.IsNsfw;
+            return false;
         }
         
         public static bool IsAdminOrHigher(ulong Id, ulong GuildId)

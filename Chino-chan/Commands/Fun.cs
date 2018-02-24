@@ -2,12 +2,16 @@
 using Chino_chan.Models.Language;
 using Chino_chan.Models.Privileges;
 using Chino_chan.Models.Settings;
+using Chino_chan.Modules;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -296,6 +300,70 @@ namespace Chino_chan.Commands
             }
         }
 
+        [Command("dl"), Summary("Fun")]
+        public async Task DownloadFromGelbooruAsync(params string[] Args)
+        {
+            if (Args.Length == 0) return;
+            if (!Directory.Exists("Gelbooru"))
+            {
+                Directory.CreateDirectory("Gelbooru");
+            }
+            var Name = GenerateFolder();
+            var Folder = "Gelbooru\\" + Name + "\\";
+            Directory.CreateDirectory(Folder);
+
+            int Limit = 50;
+
+            await Context.Channel.SendMessageAsync(Language.GelbooruImagesDownloading);
+
+            for (int i = 0; i > -1; i++)
+            {
+                var Images = await Global.Gelbooru.GetImagesAsync(Args, Limit, i);
+
+                for (int j = 0; j < Images.Count; j++)
+                {
+                    var Image = Images[j];
+                    var ImageName = Image.Url.Substring(Image.Url.LastIndexOf("/"));
+
+                    var Request = WebRequest.Create(Image.Url);
+                    var Response = await Request.GetResponseAsync();
+                    var Stream = Response.GetResponseStream();
+
+                    FileStream FileStream = new FileStream(Folder + ImageName, FileMode.Create);
+                    Stream.CopyTo(FileStream);
+                    FileStream.Close();
+                }
+
+                if (Images.Count != Limit)
+                {
+                    break;
+                }
+            }
+            if (Directory.EnumerateFiles(Folder).Count() == 0)
+            {
+                await Context.Channel.SendMessageAsync(Language.NoImages.Prepare(new Dictionary<string, string>()
+                {
+                    { "%TAGS%", string.Join(" ", Args) }
+                }));
+                return;
+            }
+            ZipFile.CreateFromDirectory(Folder, "Gelbooru\\" + Name + ".zip");
+            await Context.Channel.SendMessageAsync(Language.AnonUploadStarted);
+            
+            string Link = Uploader.Upload("Gelbooru\\" + Name + ".zip");
+            if (!string.IsNullOrWhiteSpace(Link))
+            {
+                await Context.Channel.SendMessageAsync(Language.GelbooruImagesUploaded.Prepare(new Dictionary<string, string>()
+                {
+                    { "%LINK%", Link }
+                }));
+            }
+            else
+            {
+                await Context.Channel.SendMessageAsync(Language.AnonNotAvailable);
+            }
+        }
+
         [Command("images"), Summary("Fun")]
         public async Task ImagesAsync(params string[] Args)
         {
@@ -516,6 +584,23 @@ namespace Chino_chan.Commands
             while (Messages.Count() == 100);
 
             return _Filenames;
+        }
+        private string GenerateFolder(int Length = 10)
+        {
+            var Existing = Directory.EnumerateDirectories("Gelbooru");
+            string Name;
+            do
+            {
+                string GuidString = "";
+                int Count = (int)Math.Ceiling(Length / 32.0);
+                for (int i = 0; i < Count; i++)
+                {
+                    GuidString += Guid.NewGuid().ToString().Replace("-", "");
+                }
+                Name = GuidString.Substring(0, Length);
+            }
+            while (Existing.Contains(Name));
+            return Name;
         }
     }
 }

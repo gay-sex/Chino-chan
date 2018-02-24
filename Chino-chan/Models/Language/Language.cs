@@ -189,6 +189,11 @@ namespace Chino_chan.Models.Language
         public string MusicStillDownloading { get; set; } = "The next music is still downloading, please wait~";
         public string MusicYouTubeNotValidUrl { get; set; } = "Sorry, but it's not a valid url to provide :c I only accept available YouTube videos to play~";
         public string MusicCouldnotDownload { get; set; } = "Coudln't download the music file, sorry!";
+
+        public string GelbooruImagesDownloading { get; set; } = "Downloading images with the tags~";
+        public string GelbooruImagesUploaded { get; set; } = "Images are uploaded, this is the link: %LINK%";
+        public string AnonUploadStarted { get; set; } = "Images downloaded, uploading to Anonfile~";
+        public string AnonNotAvailable { get; set; } = "Couldn't upload the package to the file host, sorry!";
         #endregion
         #region Information
         public string HasNoGit { get; set; } = "Sorry, but I can't give it to you :c";
@@ -219,6 +224,7 @@ namespace Chino_chan.Models.Language
             { "gelbooru", "I send an image from https://gelbooru.com/ owo [on non-nsfw channels, rating:safe tag will be automatically added!]" },
             { "yandere", "I send an image from https://yande.re/ owo [on non-nsfw channels, rating:s tag will be automatically added!]" },
             { "images", "Locally added images~" },
+            { "dl", "Downloads all images with the given tags, then uploads it owo" },
 
             { "help", "Casual help system uwu" },
             { "purgedm", "I remove everything from our DM channel, of course only my messages" },
@@ -243,7 +249,9 @@ namespace Chino_chan.Models.Language
             { "game", "Changing of my game :3" },
             { "restart", "Restarts me :c" },
             { "shutdown", "Shuts me down qwq" },
-            { "update", "Update system :3" }
+            { "update", "Update system :3" },
+            { "set", "Set global variable" },
+            { "get", "Get global variable" }
         };
     }
 }

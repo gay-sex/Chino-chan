@@ -199,81 +199,74 @@ namespace Chino_chan.Commands
                 Title = "**" + Language.ServerInformationHeader + "**"
             };
 
-            if (!Global.SysInfo.Loaded)
-            {
-                Embed.Title = Language.WMINotSupported;
-            }
-            else
-            {
-                var Os = Global.SysInfo.OS;
-                var CPU = Global.SysInfo.CPU;
-                var MemInfo = Global.SysInfo.MemInfo;
-                var VideoCard = Global.SysInfo.VideoCardInfo;
+            var Os = Global.SysInfo.OS;
+            var CPU = Global.SysInfo.CPU;
+            var MemInfo = Global.SysInfo.MemInfo;
+            var VideoCard = Global.SysInfo.VideoCardInfo;
 
-                var MemTotal = MemInfo.TotalMemory / 1024 / 1024;
-                var MemFree = MemInfo.CurrentMemory;
-                var MemUsage = MemTotal - MemFree;
+            var MemTotal = MemInfo.TotalMemory / 1024 / 1024;
+            var MemFree = MemInfo.CurrentMemory;
+            var MemUsage = MemTotal - MemFree;
 
-                var Drives = DriveInfo.GetDrives();
-                var DrivesText = "";
-                foreach (var Drive in Drives)
+            var Drives = DriveInfo.GetDrives();
+            var DrivesText = "";
+            foreach (var Drive in Drives)
+            {
+                switch (Drive.DriveType)
                 {
-                    switch (Drive.DriveType)
-                    {
-                        case DriveType.CDRom:
-                        case DriveType.Removable:
-                        case DriveType.Unknown:
-                            continue;
-                    }
-                    var Label = string.IsNullOrWhiteSpace(Drive.VolumeLabel) ? Language.DriveDefaultName : Drive.VolumeLabel;
-
-                    var Free = Drive.AvailableFreeSpace / 1073741824;
-                    var Total = Drive.TotalSize / 1073741824;
-
-                    DrivesText += $"- { Label } [{ Drive.DriveFormat }] ({ Drive.Name }): { Total - Free }GB / { Total }GB { Language.Free } { Free }GB\n";
+                    case DriveType.CDRom:
+                    case DriveType.Removable:
+                    case DriveType.Unknown:
+                        continue;
                 }
+                var Label = string.IsNullOrWhiteSpace(Drive.VolumeLabel) ? Language.DriveDefaultName : Drive.VolumeLabel;
 
-                Embed.AddField(new EmbedFieldBuilder()
-                {
-                    Name = Language.OperatingSystemHeader,
-                    Value = $"- { Language.NameHeader }: { Os.Name }\n"
-                          + $"- { Language.Version }: { Os.Version }\n"
-                          + $"- { Language.Architecture }: { Os.Architecture }",
-                    IsInline = false
-                });
-                Embed.AddField(new EmbedFieldBuilder()
-                {
-                    Name = Language.ProcessorHeader,
-                    Value = $"- { Language.NameHeader }: { CPU.Name }\n"
-                          + $"- { Language.Socket }: { CPU.Socket }\n"
-                          + $"- { Language.Description }: { CPU.Description }\n"
-                          + $"- { Language.Speed }: { CPU.Speed }Mhz\n"
-                          + $"- { Language.Usage }: { CPU.Percentage }%\n"
-                          + $"- { Language.Cache }: L2: { CPU.L2 }KB L3: { CPU.L3 }KB\n"
-                          + $"- { Language.Cores }/{ Language.Threads }: { CPU.Cores }/{ CPU.Threads }\n\n",
-                    IsInline = false
-                });
-                Embed.AddField(new EmbedFieldBuilder()
-                {
-                    Name = Language.Memory,
-                    Value = $"- { Language.Used }: { MemUsage } MB / { MemTotal } MB\n"
-                          + $"- { Language.Free }: { MemFree } MB",
-                    IsInline = false
-                });
-                Embed.AddField(new EmbedFieldBuilder()
-                {
-                    Name = Language.Drives,
-                    Value = DrivesText,
-                    IsInline = false
-                });
-                Embed.AddField(new EmbedFieldBuilder()
-                {
-                    Name = Language.VideoCard,
-                    Value = VideoCard.Name + " - " + VideoCard.RAM / 1024 / 1024 + "MB",
-                    IsInline = false
-                });
+                var Free = Drive.AvailableFreeSpace / 1073741824;
+                var Total = Drive.TotalSize / 1073741824;
+
+                DrivesText += $"- { Label } [{ Drive.DriveFormat }] ({ Drive.Name }): { Total - Free }GB / { Total }GB { Language.Free } { Free }GB\n";
             }
-            
+
+            Embed.AddField(new EmbedFieldBuilder()
+            {
+                Name = Language.OperatingSystemHeader,
+                Value = $"- { Language.NameHeader }: { Os.Name }\n"
+                      + $"- { Language.Version }: { Os.Version }\n"
+                      + $"- { Language.Architecture }: { Os.Architecture }",
+                IsInline = false
+            });
+            Embed.AddField(new EmbedFieldBuilder()
+            {
+                Name = Language.ProcessorHeader,
+                Value = $"- { Language.NameHeader }: { CPU.Name }\n"
+                      + $"- { Language.Socket }: { CPU.Socket }\n"
+                      + $"- { Language.Description }: { CPU.Description }\n"
+                      + $"- { Language.Speed }: { CPU.Speed }Mhz\n"
+                      + $"- { Language.Usage }: { CPU.Percentage }%\n"
+                      + $"- { Language.Cache }: L2: { CPU.L2 }KB L3: { CPU.L3 }KB\n"
+                      + $"- { Language.Cores }/{ Language.Threads }: { CPU.Cores }/{ CPU.Threads }\n\n",
+                IsInline = false
+            });
+            Embed.AddField(new EmbedFieldBuilder()
+            {
+                Name = Language.Memory,
+                Value = $"- { Language.Used }: { MemUsage } MB / { MemTotal } MB\n"
+                      + $"- { Language.Free }: { MemFree } MB",
+                IsInline = false
+            });
+            Embed.AddField(new EmbedFieldBuilder()
+            {
+                Name = Language.Drives,
+                Value = DrivesText,
+                IsInline = false
+            });
+            Embed.AddField(new EmbedFieldBuilder()
+            {
+                Name = Language.VideoCard,
+                Value = VideoCard.Name + " - " + VideoCard.RAM / 1024 / 1024 + "MB",
+                IsInline = false
+            });
+
             await Context.Channel.SendMessageAsync("", embed: Embed.Build());
         }
 
