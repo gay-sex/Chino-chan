@@ -334,7 +334,7 @@ namespace Chino_chan.Commands
                     FileStream.Close();
                 }
 
-                if (Images.Count != Limit)
+                if (Images.Count != Limit || i == 20)
                 {
                     break;
                 }
