@@ -6,27 +6,32 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Chino_chan.WebServer
+namespace Chino_chan.Remote
 {
     public class Client
     {
-        public delegate void OnDataReceived(ReceivedMessage Message);
-
-        public event Action Disconnected;
-        public event OnDataReceived DataReceived;
+        public event Action<uint> Disconnected;
+        public event Action<byte[]> DataReceived;
 
         private Thread ListeningThread { get; set; }
 
         public Socket Socket { get; private set; }
 
         public bool Alive { get; private set; }
+        public uint Id { get; private set; }
+        public bool Auth { get; private set; }
 
-        public Client(Socket Socket)
+        public Client(Socket Socket, uint Id)
         {
             this.Socket = Socket;
+            this.Id = Id;
+
+            Auth = false;
+
             Alive = Socket.Connected;
 
             ListeningThread = new Thread(Listening);
+            ListeningThread.Start();
         }
 
         private void Listening()
@@ -40,29 +45,24 @@ namespace Chino_chan.WebServer
 
                     var ReceivedData = Data.SelectMany(t => t).ToArray();
 
-                    DataReceived?.Invoke(new ReceivedMessage(ReceivedData));
+                    DataReceived?.Invoke(ReceivedData);
                 }
-                catch (SocketException)
+                catch
                 {
                     Alive = false;
                     ListeningThread.Abort();
-                    Disconnected?.Invoke();
+                    Disconnected?.Invoke(Id);
                     break;
                 }
             }
         }
-
-        public void StartListening()
-        {
-            ListeningThread.Start();
-        }
-
-        public void StopListening()
+        public void Disconnect()
         {
             ListeningThread.Abort();
-            ListeningThread = null;
+            Alive = false;
+            Socket.Disconnect(false);
+            Disconnected?.Invoke(Id);
         }
-
         public int Send(byte[] Bytes)
         {
             return Socket.Send(Bytes);

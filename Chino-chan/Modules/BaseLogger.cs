@@ -1,5 +1,4 @@
 ﻿using Chino_chan.Models.osuAPI;
-using Discord;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -40,7 +39,8 @@ namespace Chino_chan.Modules
         Imgur,
         GoogleDrive,
         ExternalModules,
-        YouTubeAPI
+        YouTubeAPI,
+        Remote
     }
     public class BaseLogger
     {

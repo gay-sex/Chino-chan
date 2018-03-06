@@ -33,11 +33,11 @@ namespace Chino_chan.Commands
         {
             if (Args.Length == 0)
             {
-                if (Context.Client.CurrentUser.Game.HasValue)
+                if (Context.Client.CurrentUser.Activity.Name == "")
                 {
                     await Context.Channel.SendMessageAsync(Language.Game.Prepare(new Dictionary<string, string>()
                     {
-                        { "%GAME%", Context.Client.CurrentUser.Game.Value.Name }
+                        { "%GAME%", Context.Client.CurrentUser.Activity.Name }
                     }));
                 }
                 else
@@ -50,7 +50,7 @@ namespace Chino_chan.Commands
                 await Global.Client.SetGameAsync(string.Join(" ", Args));
                 await Context.Channel.SendMessageAsync(Language.Game.Prepare(new Dictionary<string, string>()
                 {
-                    { "%GAME%", Context.Client.CurrentUser.Game.Value.Name }
+                    { "%GAME%", Context.Client.CurrentUser.Activity.Name }
                 }));
             }
         }

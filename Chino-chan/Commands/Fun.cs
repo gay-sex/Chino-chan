@@ -299,71 +299,7 @@ namespace Chino_chan.Commands
                 await Context.Channel.SendMessageAsync("", embed: Builder.Build());
             }
         }
-
-        [Command("dl"), Summary("Fun")]
-        public async Task DownloadFromGelbooruAsync(params string[] Args)
-        {
-            if (Args.Length == 0) return;
-            if (!Directory.Exists("Gelbooru"))
-            {
-                Directory.CreateDirectory("Gelbooru");
-            }
-            var Name = GenerateFolder();
-            var Folder = "Gelbooru\\" + Name + "\\";
-            Directory.CreateDirectory(Folder);
-
-            int Limit = 50;
-
-            await Context.Channel.SendMessageAsync(Language.GelbooruImagesDownloading);
-
-            for (int i = 0; i > -1; i++)
-            {
-                var Images = await Global.Gelbooru.GetImagesAsync(Args, Limit, i);
-
-                for (int j = 0; j < Images.Count; j++)
-                {
-                    var Image = Images[j];
-                    var ImageName = Image.Url.Substring(Image.Url.LastIndexOf("/"));
-
-                    var Request = WebRequest.Create(Image.Url);
-                    var Response = await Request.GetResponseAsync();
-                    var Stream = Response.GetResponseStream();
-
-                    FileStream FileStream = new FileStream(Folder + ImageName, FileMode.Create);
-                    Stream.CopyTo(FileStream);
-                    FileStream.Close();
-                }
-
-                if (Images.Count != Limit || i == 20)
-                {
-                    break;
-                }
-            }
-            if (Directory.EnumerateFiles(Folder).Count() == 0)
-            {
-                await Context.Channel.SendMessageAsync(Language.NoImages.Prepare(new Dictionary<string, string>()
-                {
-                    { "%TAGS%", string.Join(" ", Args) }
-                }));
-                return;
-            }
-            ZipFile.CreateFromDirectory(Folder, "Gelbooru\\" + Name + ".zip");
-            await Context.Channel.SendMessageAsync(Language.AnonUploadStarted);
-            
-            string Link = Uploader.Upload("Gelbooru\\" + Name + ".zip");
-            if (!string.IsNullOrWhiteSpace(Link))
-            {
-                await Context.Channel.SendMessageAsync(Language.GelbooruImagesUploaded.Prepare(new Dictionary<string, string>()
-                {
-                    { "%LINK%", Link }
-                }));
-            }
-            else
-            {
-                await Context.Channel.SendMessageAsync(Language.AnonNotAvailable);
-            }
-        }
-
+        
         [Command("images"), Summary("Fun")]
         public async Task ImagesAsync(params string[] Args)
         {
@@ -422,9 +358,9 @@ namespace Chino_chan.Commands
                 }
                 else if (Args[0] == "play")
                 {
-                    if (Music.State == Modules.PlayerState.Paused)
+                    if (Music.State == PlayerState.Paused)
                     {
-                        Music.State = Modules.PlayerState.Playing;
+                        Music.State = PlayerState.Playing;
                         return;
                     }
                     if (Args.Length > 1)
@@ -544,11 +480,11 @@ namespace Chino_chan.Commands
             {
                 if (LastMessageId != 0)
                 {
-                    Messages = await Context.Channel.GetMessagesAsync(LastMessageId, Direction.Before, 100).Flatten();
+                    Messages = await Context.Channel.GetMessagesAsync(LastMessageId, Direction.Before, 100).Flatten().ToList();
                 }
                 else
                 {
-                    Messages = await Context.Channel.GetMessagesAsync(LastMessageId, Direction.Before, 100).Flatten();
+                    Messages = await Context.Channel.GetMessagesAsync(LastMessageId, Direction.Before, 100).Flatten().ToList();
                 }
                 var LastMessage = Messages.Last();
                 if (LastMessage.Id == LastMessageId)

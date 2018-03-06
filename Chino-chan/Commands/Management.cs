@@ -43,9 +43,9 @@ namespace Chino_chan.Commands
                     do
                     {
                         if (LastMessageId != 0)
-                            Messages = await DmChannel.GetMessagesAsync(LastMessageId, Direction.Before, Limit).Flatten();
+                            Messages = await DmChannel.GetMessagesAsync(LastMessageId, Direction.Before, Limit).Flatten().ToList();
                         else
-                            Messages = await DmChannel.GetMessagesAsync(Limit).Flatten();
+                            Messages = await DmChannel.GetMessagesAsync(Limit).Flatten().ToList();
 
                         if (LastMessageId == Messages.Last().Id)
                         {
@@ -133,8 +133,8 @@ namespace Chino_chan.Commands
                 List<IMessage> Messages;
                 do
                 {
-                    OriginalMessages = await Context.Channel.GetMessagesAsync(50).Flatten();
-                    Messages = (OriginalMessages).ToList();
+                    Messages = await Context.Channel.GetMessagesAsync(50).Flatten().ToList();
+                    OriginalMessages = Messages;
 
                     var BulkableMessages = Messages.Where(t => t.CreatedAt > DateTime.Now.AddDays(-13));
 
@@ -509,9 +509,9 @@ namespace Chino_chan.Commands
                     do
                     {
                         if (LastId != 0)
-                            Messages = await Context.Channel.GetMessagesAsync(LastId, Direction.Before, 100).Flatten();
+                            Messages = await Context.Channel.GetMessagesAsync(LastId, Direction.Before, 100).Flatten().ToList();
                         else
-                            Messages = await Context.Channel.GetMessagesAsync(100).Flatten();
+                            Messages = await Context.Channel.GetMessagesAsync(100).Flatten().ToList();
 
                         int i;
 
@@ -1228,7 +1228,7 @@ namespace Chino_chan.Commands
 
         private async Task DeleteMessages(ITextChannel Channel, int Count)
         {
-            var Messages = await Channel.GetMessagesAsync(Count).Flatten();
+            var Messages = await Channel.GetMessagesAsync(Count).Flatten().ToList();
             foreach (var Message in Messages)
             {
                 await Message.DeleteAsync();

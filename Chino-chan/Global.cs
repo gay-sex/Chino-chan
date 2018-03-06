@@ -22,11 +22,14 @@ using Google.Apis.Services;
 using System.Net;
 using System.IO.Compression;
 using Google.Apis.YouTube.v3;
+using Chino_chan.Models.Settings.Credentials;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Chino_chan
 {
     public static class Global
     {
+        private static IServiceProvider Services { get; set; }
         private static TimeSpan StartedTime;
         public static TimeSpan Uptime
         {
@@ -51,7 +54,7 @@ namespace Chino_chan
             }
         }
         
-        public static bool OSUAPIEnabled
+        public static bool osuAPIEnabled
         {
             get
             {
@@ -117,14 +120,12 @@ namespace Chino_chan
             Danbooru = new Danbooru();
             Yandere = new Yandere();
             
-            if (!string.IsNullOrWhiteSpace(Settings.Credentials.Sankaku.Username)
-             && !string.IsNullOrWhiteSpace(Settings.Credentials.Sankaku.Password))
+            if (!Settings.Credentials.IsEmpty(CredentialType.Sankaku))
             {
                 Sankaku = new Sankaku(Settings.Credentials.Sankaku.Username, Settings.Credentials.Sankaku.Password);
             }
             
-            if (!string.IsNullOrWhiteSpace(Settings.Credentials.Imgur.ClientId)
-             && !string.IsNullOrWhiteSpace(Settings.Credentials.Imgur.ClientSecret))
+            if (!Settings.Credentials.IsEmpty(CredentialType.Imgur))
             {
                 Imgur = new Image.Imgur();
             }
@@ -133,16 +134,15 @@ namespace Chino_chan
              && !string.IsNullOrWhiteSpace(Settings.Credentials.Google.ClientId))
             {
                 Logger.Log(ConsoleColor.Green, LogType.GoogleDrive, null, "Logging into GoogleDrive...");
-                /*
                 var Credential = GoogleWebAuthorizationBroker.AuthorizeAsync(new ClientSecrets()
                 {
                     ClientId = Settings.Credentials.Google.ClientId,
                     ClientSecret = Settings.Credentials.Google.ClientSecret
                 }, new string[] { DriveService.Scope.Drive }, "user", CancellationToken.None).Result;
-                */
+
                 GoogleDrive = new DriveService(new BaseClientService.Initializer()
                 {
-                    //HttpClientInitializer = Credential,
+                    HttpClientInitializer = Credential,
                     ApplicationName = "Chino-chan"
                 });
                 Logger.Log(ConsoleColor.Green, LogType.GoogleDrive, null, "Logged in!");
@@ -181,21 +181,25 @@ namespace Chino_chan
             };
             Client.Ready += () =>
             {
-                Logger.Log(ConsoleColor.DarkYellow, LogType.Sankaku, "Login", "Logging in...");
-                var LoggedIn = Sankaku.Login(out bool TooManyRequests);
-                if (LoggedIn)
+                if (Sankaku != null)
                 {
-                    Logger.Log(ConsoleColor.DarkYellow, LogType.Sankaku, "Login", "Logged in!");
-                }
-                else
-                {
-                    Logger.Log(ConsoleColor.Red, LogType.Sankaku, "Login", "Couldn't log in due to " + (TooManyRequests ? "rate limitation!" : "wrong credentials!"));
-                }
+                    Logger.Log(ConsoleColor.DarkYellow, LogType.Sankaku, "Login", "Logging in...");
 
+                    var LoggedIn = Sankaku.Login(out bool TooManyRequests);
+                    if (LoggedIn)
+                    {
+                        Logger.Log(ConsoleColor.DarkYellow, LogType.Sankaku, "Login", "Logged in!");
+                    }
+                    else
+                    {
+                        Logger.Log(ConsoleColor.Red, LogType.Sankaku, "Login", "Couldn't log in due to " + (TooManyRequests ? "rate limitation!" : "wrong credentials!"));
+                    }
+                }
+                
                 return Task.CompletedTask;
             };
             
-            if (OSUAPIEnabled)
+            if (osuAPIEnabled)
             {
                 osuAPI = new osuApi();
             }
@@ -206,8 +210,10 @@ namespace Chino_chan
                 LogLevel = LogSeverity.Verbose,
                 DefaultRunMode = RunMode.Async
             });
-
             Logger.Log(ConsoleColor.Cyan, LogType.Commands, null, "Loading Commands...");
+
+            Services = new ServiceCollection().BuildServiceProvider();
+
             CommandService.AddModulesAsync(Assembly.GetEntryAssembly()).ContinueWith((ModuleInfo) =>
             {
                 Logger.Log(ConsoleColor.Cyan, LogType.Commands, null, "Loaded Commands!");
@@ -339,7 +345,7 @@ namespace Chino_chan
                     return;
                 }
 
-                var Result = await CommandService.ExecuteAsync(Context, Position);
+                var Result = await CommandService.ExecuteAsync(Context, Position, Services);
                 if (!Result.IsSuccess)
                 {
                     switch (Result.Error)
