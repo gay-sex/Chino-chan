@@ -23,12 +23,13 @@ namespace Chino_chan.Remote
             {
                 while (true)
                 {
-                    var Client = new Client(Server.AcceptSocket(), GetId());
+                    var Client = new Client(Server.AcceptTcpClient(), GetId());
 
                     Client.DataReceived += (Data) =>
                     {
                         if (Data.Length == 0) Client.Disconnect();
                         MessageType Type = (MessageType)Data[0];
+
                         if (Type == MessageType.Credentials && !Client.Auth)
                         {
                             
@@ -48,6 +49,10 @@ namespace Chino_chan.Remote
 
                             }
                         }
+                    };
+                    Client.WebBrowserDataReceived += (Url) =>
+                    {
+
                     };
                     Client.Disconnected += (Id) =>
                     {

@@ -158,6 +158,8 @@ namespace Chino_chan.Models.Language
 
         public string NoImages { get; set; } = "Sorry, but I couldn't find any images with these tags: `%TAGS%` :c";
 
+        public string NoGuildIcon { get; set; } = "Sorry, but this guild doesn't have icon :c";
+
         public string MusicHelp { get; set; } = "```css\n" +
                                                 "[Connection]\n" +
                                                 "%P%music connect / c - connects to the voice channel where you are if not connected\n" +
@@ -172,6 +174,7 @@ namespace Chino_chan.Models.Language
                                                 "%P%music list - Lists the first 5 item of the Queue\n" +
                                                 "%P%music current - Displays info about the current played song" +
                                                 "```";
+        public string MusicCantPlay { get; set; } = "Sorry, but I can't play this one, because I can't download it :c";
         public string MusicConnected { get; set; } = "Connected to %VOICE%~";
         public string MusicCannotConnect { get; set; } = "I can't connect to the voice channel, please join into one!";
         public string MusicDisconnect { get; set; } = "I've disconnected from the voice channel~";
@@ -189,6 +192,8 @@ namespace Chino_chan.Models.Language
         public string MusicStillDownloading { get; set; } = "The next music is still downloading, please wait~";
         public string MusicYouTubeNotValidUrl { get; set; } = "Sorry, but it's not a valid url to provide :c I only accept available YouTube videos to play~";
         public string MusicCouldnotDownload { get; set; } = "Coudln't download the music file, sorry!";
+        public string MusicAdded { get; set; } = "Added to playlist";
+        public string Index { get; set; } = "Index";
 
         public string GelbooruImagesDownloading { get; set; } = "Downloading images with the tags~";
         public string GelbooruImagesUploaded { get; set; } = "Images are uploaded, this is the link: %LINK%";
@@ -240,6 +245,7 @@ namespace Chino_chan.Models.Language
             { "setnsfw", "Add or remove the channel from nsfw zone *doesn't override the nsfw channel mark of Discord*" },
             { "say", "Basic say command~" },
             { "music", "Music part of me uwu" },
+            { "gicon", "Gets the icon of the guild owo" },
 
             { "info", "Some info about me o//o" },
             { "serverinfo", "Some information of the environment where I am owo" },

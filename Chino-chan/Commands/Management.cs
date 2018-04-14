@@ -748,8 +748,7 @@ namespace Chino_chan.Commands
 
                 if (Message != null)
                 {
-                    var Regex = new Regex("");
-                    await txtChannel.SendMessageAsync(Message);
+                    await txtChannel.SendMessageAsync(ProcessEmotes(Message));
                     await SayAutoDeleteAsync();
                     return;
                 }
@@ -1265,6 +1264,63 @@ namespace Chino_chan.Commands
                 Password += Char;
             }
             return Password;
+        }
+        private string ProcessEmotes(string Message)
+        {
+            string Return = Message;
+
+            Regex Regex = new Regex(@"(:.*?:)");
+            Regex Check = new Regex(@"(<:.*?:\d+>)");
+
+            MatchCollection Matches = Regex.Matches(Message);
+
+            if (Matches.Count > 0)
+            {
+                List<int> CheckNums = new List<int>();
+                MatchCollection CheckMatches = Check.Matches(Message);
+
+                for (int i = 0; i < CheckMatches.Count; i++)
+                {
+                    Match CheckMatch = CheckMatches[i];
+                    CheckNums.Add(CheckMatch.Index + 1);
+                }
+                CheckMatches = null;
+
+                Dictionary<string, GuildEmote> Emotes = new Dictionary<string, GuildEmote>();
+                for (int i = 0; i < Global.Client.Guilds.Count; i++)
+                {
+                    IGuild Guild = Global.Client.Guilds.ElementAt(i);
+                    foreach (var GuildEmote in Guild.Emotes)
+                    {
+                        string Name = $":{ GuildEmote.Name }:";
+                        if (!Emotes.ContainsKey(Name)) Emotes.Add($":{ GuildEmote.Name }:", GuildEmote);
+                    }
+                }
+
+                for (int i = 0; i < Matches.Count; i++)
+                {
+                    Match Match = Matches[i];
+                    bool Replace = !CheckNums.Contains(Match.Index);
+
+                    if (Replace)
+                    {
+                        GuildEmote Emote = null;
+                        
+                        if (Emotes.ContainsKey(Match.Value))
+                        {
+                            Emote = Emotes[Match.Value];
+                        }
+
+                        if (Emote != null)
+                        {
+                            Return = Return.Remove(Match.Index, Match.Length);
+                            Return = Return.Insert(Match.Index, $"<:{ Emote.Name }:{ Emote.Id }>");
+                        }
+                    }
+                }
+            }
+
+            return Return;
         }
         #endregion
     }

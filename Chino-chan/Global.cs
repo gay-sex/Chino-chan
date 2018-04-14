@@ -448,25 +448,6 @@ namespace Chino_chan
                     Environment.Exit(exitCode: 0);
                 }
             }
-            if (!File.Exists("External\\ytdl\\ytdl.exe"))
-            {
-                Logger.Log(ConsoleColor.DarkYellow, LogType.ExternalModules, "ytdl", "ytdl is missing, downloading...");
-                Directory.CreateDirectory("External\\ytdl");
-                var Link = "https://yt-dl.org/downloads/2017.12.31/youtube-dl.exe";
-                var Client = new WebClient();
-                Client.DownloadFile(Link, "External\\ytdl\\ytdl.exe");
-                if (File.Exists("External\\ytdl\\ytdl.exe"))
-                {
-                    Logger.Log(ConsoleColor.Blue, LogType.ExternalModules, "ytdl", "ytdl module is ready!");
-                }
-                else
-                {
-                    Logger.Log(ConsoleColor.Red, LogType.ExternalModules, "ytdl", "Couldn't download ytdl, please install it manually! Copy ytdl.exe into \"External\\ytdl\" folder!");
-                    Console.WriteLine("Press any key to exit...");
-                    Console.ReadKey();
-                    Environment.Exit(exitCode: 0);
-                }
-            }
             if (!File.Exists("libsodium.dll"))
             {
                 Logger.Log(ConsoleColor.DarkYellow, LogType.ExternalModules, "Sodium", "Sodium is missing, downloading...");

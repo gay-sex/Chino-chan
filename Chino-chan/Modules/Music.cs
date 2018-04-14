@@ -13,9 +13,12 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using YoutubeExplode;
+using YoutubeExplode.Models.MediaStreams;
 
 namespace Chino_chan.Modules
 {
@@ -31,7 +34,6 @@ namespace Chino_chan.Modules
     public class Music
     {
         #region Variables
-        WebClient HelperClient { get; set; }
         public Color Color { get; private set; }
 
         public IAudioClient Client { get; set; }
@@ -56,7 +58,6 @@ namespace Chino_chan.Modules
 
         public Music()
         {
-            HelperClient = new WebClient();
             Color = new Color(255, 48, 222);
             State = PlayerState.Stopped;
             Queue = new List<MusicItem>();
@@ -85,7 +86,14 @@ namespace Chino_chan.Modules
 
             if (Connected)
             {
-                await Client.StopAsync();
+                try
+                {
+                    await Client.StopAsync();
+                }
+                catch
+                {
+
+                }
                 State = PlayerState.Stopped;
                 await Context.Channel.SendMessageAsync(Language.MusicDisconnect);
                 return;
@@ -115,9 +123,9 @@ namespace Chino_chan.Modules
         {
             var Language = Context.GetLanguage();
             var YtId = GetYoutubeId(Youtube);
-            var Information = GetInformation(YtId);
+            var Info = GetInformation(YtId);
 
-            if (Information.Type.ToLower() != "video")
+            if (Info.Type?.ToLower() != "video")
             {
                 await Context.Channel.SendMessageAsync(Language.MusicYouTubeNotValidUrl);
                 return;
@@ -125,20 +133,8 @@ namespace Chino_chan.Modules
 
             var MusicItem = new MusicItem()
             {
-                Name = Information.Title,
-                YouTubeData = new MusicYouTubeData()
-                {
-                    YouTubeInfo = Information,
-                    State = DownloadState.Added
-                }
-            };
-
-            MusicItem.YouTubeData.Downloaded += async () =>
-            {
-                if (State != PlayerState.Playing || State != PlayerState.WaitingForDownload)
-                {
-                    await Play(Context);
-                }
+                Name = Info.Title,
+                YouTubeInfo = Info
             };
             
             Queue.Add(MusicItem);
@@ -147,7 +143,24 @@ namespace Chino_chan.Modules
                 Settings.Music.Queue = Queue;
             });
 
-            DownloadYoutubeVideo(YtId, ref MusicItem);
+            if (NowPlaying != null)
+            {
+                await Context.Channel.SendMessageAsync("", embed: new EmbedBuilder()
+                {
+                    Title = Language.MusicAdded,
+                    Description = Language.Title + ": [" + Info.Title + "](" + Info.Url + ")\n"
+                            + Language.Uploaded + ": [" + Info.Author + "](" + Info.AuthorUrl + ")\n"
+                            + Language.Length + ": " + Info.Duration.ToString(@"hh\:mm\:ss") + "\n"
+                            + Language.Index + ": " + (Queue.Count - 1),
+                    ThumbnailUrl = Info.Thumbnail,
+                    Color = Color
+
+                }.Build());
+            }
+            else
+            {
+                await Play(Context);
+            }
         }
 
         public bool RemoveItem(ICommandContext Context, int Id)
@@ -203,9 +216,9 @@ namespace Chino_chan.Modules
                 {
                     var NowPlaying = Queue[i];
                     
-                    if (NowPlaying.YouTubeData != null)
+                    if (!string.IsNullOrWhiteSpace(NowPlaying.YouTubeInfo.Title))
                     {
-                        var Info = NowPlaying.YouTubeData.YouTubeInfo;
+                        var Info = NowPlaying.YouTubeInfo;
                         Builder.AddField(new EmbedFieldBuilder()
                         {
                             IsInline = false,
@@ -213,9 +226,9 @@ namespace Chino_chan.Modules
                             Value = "[" + Language.Url + "](" + Info.Url + ")\n" +
                                     Language.Uploaded + ": [" + Info.Author + "](" + Info.AuthorUrl + ")\n" +
                                     Language.Length + ": "
-                                    + NowPlaying.Duration.Hours.ToString("00") + ":"
-                                    + NowPlaying.Duration.Minutes.ToString("00") + ":" 
-                                    + NowPlaying.Duration.Seconds.ToString("00")
+                                    + NowPlaying.YouTubeInfo.Duration.Hours.ToString("00") + ":"
+                                    + NowPlaying.YouTubeInfo.Duration.Minutes.ToString("00") + ":" 
+                                    + NowPlaying.YouTubeInfo.Duration.Seconds.ToString("00")
                         });
                     }
                     else
@@ -244,22 +257,29 @@ namespace Chino_chan.Modules
                 Title = Language.MusicPlaying
             };
 
-            if (NowPlaying.YouTubeData != null)
+            if (NowPlaying == null)
             {
-                var Info = NowPlaying.YouTubeData.YouTubeInfo;
-                Builder.Description = Language.Title + ": [" + Info.Title + "](" + Info.Url + ")\n"
-                            + Language.Uploaded + ": [" + Info.Author + "](" + Info.AuthorUrl + ")\n";
-                Builder.ThumbnailUrl = Info.Thumbnail;
+                Builder.Title = Language.MusicNotPlaying;
             }
             else
             {
-                Builder.Description = Language.Title + ": " + Path.GetFileNameWithoutExtension(NowPlaying.Path) + "\n";
-            }
+                bool yt = !string.IsNullOrWhiteSpace(NowPlaying.YouTubeInfo.Title);
 
-            Builder.Description += Language.Length
-                + ": " + NowPlaying.Duration.Hours.ToString("00") 
-                + ":" + NowPlaying.Duration.Minutes.ToString("00") 
-                + ":" + NowPlaying.Duration.Seconds.ToString("00");
+                if (yt)
+                {
+                    var Info = NowPlaying.YouTubeInfo;
+                    Builder.Description = Language.Title + ": [" + Info.Title + "](" + Info.Url + ")\n"
+                                + Language.Uploaded + ": [" + Info.Author + "](" + Info.AuthorUrl + ")\n";
+                    Builder.ThumbnailUrl = Info.Thumbnail;
+                }
+                else
+                {
+                    Builder.Description = Language.Title + ": " + Path.GetFileNameWithoutExtension(NowPlaying.Path) + "\n";
+                }
+
+                Builder.Description += Language.Length + ": " +
+                    (yt ? NowPlaying.YouTubeInfo.Duration : NowPlaying.Duration).ToString(@"hh\:mm\:ss");
+            }
 
             await Context.Channel.SendMessageAsync("", embed: Builder.Build());
         }
@@ -292,82 +312,92 @@ namespace Chino_chan.Modules
             
             var Language = Context.GetLanguage();
 
-            if (NowPlaying.YouTubeData != null && NowPlaying.YouTubeData.State != DownloadState.Downloaded)
-            {
-                State = PlayerState.WaitingForDownload;
-
-                NowPlaying.YouTubeData.Downloaded += async () =>
-                {
-                    await ActualPlay(Context, Language);
-                };
-                if (NowPlaying.YouTubeData.State != DownloadState.Downloading)
-                {
-                    var Id = GetYoutubeId(NowPlaying.YouTubeData.YouTubeInfo.Url);
-                    var Playing = NowPlaying;
-                    DownloadYoutubeVideo(Id, ref Playing);
-                    NowPlaying = Playing;
-                }
-                await Context.Channel.SendMessageAsync(Language.MusicStillDownloading);
-            }
-            else
-            {
-                await ActualPlay(Context, Language);
-            }
-
-        }
-        private async Task ActualPlay(ICommandContext Context, Language Language)
-        {
             await SendNowPlayingAsync(Context);
 
-            Stream Stream = CreateLocalStream(NowPlaying.Path);
+            Stream Stream = null;
 
             State = PlayerState.Playing;
             var PCMStream = Client.CreatePCMStream(AudioApplication.Music);
             var Buffer = new byte[8 * 1024];
             var Count = 0;
 
-            while ((Count = await Stream.ReadAsync(Buffer, 0, Buffer.Length)) != 0)
+            if (string.IsNullOrWhiteSpace(NowPlaying.YouTubeInfo.Title))
             {
-                if (State == PlayerState.Paused)
+                Stream = CreateFFmpegStream(NowPlaying.Path);
+            }
+            else
+            {
+                YoutubeClient Client = new YoutubeClient();
+                MediaStreamInfoSet InfoSet = await Client.GetVideoMediaStreamInfosAsync(YoutubeClient.ParseVideoId(NowPlaying.YouTubeInfo.Url));
+
+                string Url = "";
+
+                if (InfoSet.Audio.Count > 0)
                 {
-                    await Context.Channel.SendMessageAsync("", embed: new EmbedBuilder()
-                    {
-                        Title = Language.MusicPaused,
-                        Color = Color
-                    }.Build());
+                    Url = InfoSet.Audio.WithHighestBitrate().Url;
+                }
+                else
+                {
+                    Url = InfoSet.Muxed.First().Url;
+                }
+                Stream = CreateFFmpegStream(Url);
+            }
 
-                    await PCMStream.FlushAsync();
-                    PCMStream.Dispose();
+            await Task.Delay(1000);
 
-                    while (State == PlayerState.Paused)
-                    {
-                        Thread.Sleep(100);
-                    }
-
-                    PCMStream = Client.CreatePCMStream(AudioApplication.Music);
-                    if (State == PlayerState.Playing)
+            if (Stream != null)
+            {
+                while ((Count = await Stream.ReadAsync(Buffer, 0, Buffer.Length)) != 0)
+                {
+                    if (State == PlayerState.Paused)
                     {
                         await Context.Channel.SendMessageAsync("", embed: new EmbedBuilder()
                         {
-                            Title = Language.MusicResumed,
+                            Title = Language.MusicPaused,
                             Color = Color
                         }.Build());
+
+                        await PCMStream.FlushAsync();
+                        PCMStream.Dispose();
+
+                        while (State == PlayerState.Paused)
+                        {
+                            Thread.Sleep(100);
+                        }
+
+                        PCMStream = Client.CreatePCMStream(AudioApplication.Music);
+                        if (State == PlayerState.Playing)
+                        {
+                            await Context.Channel.SendMessageAsync("", embed: new EmbedBuilder()
+                            {
+                                Title = Language.MusicResumed,
+                                Color = Color
+                            }.Build());
+                        }
+                    }
+                    if (State == PlayerState.Stopped || State == PlayerState.Next)
+                    {
+                        break;
+                    }
+
+                    Buffer = ChangeVolume(Buffer, Volume / 100);
+                    try
+                    {
+                        await PCMStream.WriteAsync(Buffer, 0, Count);
+                    }
+                    catch
+                    {
+                        break;
                     }
                 }
-                if (State == PlayerState.Stopped || State == PlayerState.Next)
+            }
+            else
+            {
+                await Context.Channel.SendMessageAsync("", embed: new EmbedBuilder()
                 {
-                    break;
-                }
-
-                Buffer = ChangeVolume(Buffer, Volume / 100);
-                try
-                {
-                    await PCMStream.WriteAsync(Buffer, 0, Count);
-                }
-                catch
-                {
-                    break;
-                }
+                    Title = Language.MusicCantPlay,
+                    Color = Color
+                }.Build());
             }
 
             if (State == PlayerState.Stopped)
@@ -386,6 +416,7 @@ namespace Chino_chan.Modules
                     Color = Color
                 }.Build());
             }
+
             if (State != PlayerState.Stopped)
             {
                 RemoveItem(Context, 0);
@@ -393,7 +424,9 @@ namespace Chino_chan.Modules
 
             NowPlaying = null;
 
-            Stream.Dispose();
+            if (Stream != null)
+                Stream.Dispose();
+
             await PCMStream.FlushAsync();
             PCMStream.Dispose();
 
@@ -401,68 +434,20 @@ namespace Chino_chan.Modules
             {
                 await Task.Run(() => Play(Context));
             }
-        }
 
-        private Stream CreateLocalStream(string Path)
+        }
+        private Stream CreateFFmpegStream(string PathOrUrl)
         {
             var ffmpeg = new ProcessStartInfo
             {
                 FileName = "External\\ffmpeg\\ffmpeg.exe",
-                Arguments = $"-i \"{ Path }\" -ac 2 -f s16le -ar 48000 pipe:1 -loglevel quiet",
+                Arguments = $"-i \"{ PathOrUrl }\" -ac 2 -f s16le -ar 48000 pipe:1 -loglevel quiet",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
             };
             return Process.Start(ffmpeg).StandardOutput.BaseStream;
         }
-        private void DownloadYoutubeVideo(string YouTubeId, ref MusicItem Item)
-        {
-            var Folder = $"Cache\\Music\\{ YouTubeId }\\";
-            var Output = Folder + "music.mp3";
-
-            // Check if cached
-            if (File.Exists(Output))
-            {
-                Item.Path = Output;
-                Item.Duration = GetLength(Output);
-                Item.YouTubeData.State = DownloadState.Downloaded;
-                return;
-            }
-            if (!Directory.Exists(Folder))
-            {
-                Directory.CreateDirectory("Cache\\Music\\" + YouTubeId);
-            }
-            Item.YouTubeData.State = DownloadState.Downloading;
-
-            // Download video
-            var StartInfo = new ProcessStartInfo()
-            {
-                FileName = "External\\ytdl\\ytdl.exe",
-                Arguments = $"-o { Folder }vid.temp { YouTubeId }",
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden
-            };
-            Process.Start(StartInfo).WaitForExit();
-
-            // Extract audio
-            StartInfo = new ProcessStartInfo()
-            {
-                FileName = "External\\ffmpeg\\ffmpeg.exe",
-                Arguments = $"-i { Folder }vid.temp -vn -ar 48000 -ac 2 -f mp3 { Output }",
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden
-            };
-            Process.Start(StartInfo).WaitForExit();
-
-            File.Delete($"{ Folder }vid.temp");
-
-            if (File.Exists(Output))
-            {
-                Item.Path = Output;
-                Item.Duration = GetLength(Output);
-                Item.YouTubeData.State = DownloadState.Downloaded;
-            }
-        }
-
+        
         private byte[] ChangeVolume(byte[] AudioSamples, float Volume)
         {
             Contract.Requires(AudioSamples != null);
@@ -519,14 +504,33 @@ namespace Chino_chan.Modules
         }
         private YouTubeResponse GetInformation(string Id)
         {
+            WebClient HelperClient = new WebClient();
+
             var Url = "https://www.youtube.com/watch?v=" + Id;
-            var Response = HelperClient.DownloadString("https://www.youtube.com/oembed?url=" + Url + "&format=json");
-            if (Response != "Not Found")
+            
+            try
             {
-                var Parsed = JsonConvert.DeserializeObject<YouTubeResponse>(Response);
-                Parsed.Url = Url;
-                return Parsed;
+                string Data = HelperClient.DownloadString("https://www.youtube.com/oembed?url=" + Url + "&format=json");
+
+                if (Data != "Not Found")
+                {
+                    var Parsed = JsonConvert.DeserializeObject<YouTubeResponse>(Data);
+                    Parsed.Url = Url;
+
+                    Data = HelperClient.DownloadString(Url);
+
+                    Regex Regex = new Regex("\"length_seconds\":\"(\\d*)\"");
+                    if (Regex.IsMatch(Data))
+                    {
+                        Match Match = Regex.Match(Data);
+                        Parsed.Duration = TimeSpan.FromSeconds(int.Parse(Match.Groups[1].Value));
+                    }
+
+                    return Parsed;
+                }
             }
+            catch { }
+            
             return default(YouTubeResponse);
         }
         private TimeSpan GetLength(string Path)

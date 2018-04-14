@@ -96,6 +96,38 @@ namespace Chino_chan.Commands
             }
         }
 
+        [Command("gicon"), Summary("Fun"), ServerCommand()]
+        public async Task GetGuildAvatar(params string[] Args)
+        {
+            var Url = Context.Guild.IconUrl;
+            if (Url == null)
+            {
+                await Context.Channel.SendMessageAsync(Language.NoGuildIcon);
+                return;
+            }
+            EmbedBuilder Builder = new EmbedBuilder();
+
+            Builder.WithAuthor(Context.User);
+            uint Color = Discord.Color.Default.RawValue;
+            IGuildUser User = Context.User as IGuildUser;
+            for (int i = 0; i < User.RoleIds.Count; i++)
+            {
+                var Role = Context.Guild.GetRole(User.RoleIds.ElementAt(i));
+                if (Role.Color.RawValue != Color)
+                {
+                    Color = Role.Color.RawValue;
+                    break;
+                }
+            }
+
+            Builder.WithColor(Color);
+
+            Builder.WithImageUrl(Url);
+            Builder.WithUrl(Url);
+
+            await Context.Channel.SendMessageAsync("", embed: Builder.Build());
+        }
+
         [Command("waifu"), Summary("Fun")]
         public async Task WaifuAsync(params string[] Args)
         {
@@ -337,7 +369,7 @@ namespace Chino_chan.Commands
             if (Args.Length > 0)
             {
                 Args[0] = Args[0].ToLower();
-                
+
                 if (!Global.MusicClients.TryGetValue(Context.Guild.Id, out Modules.Music Music))
                 {
                     Music = new Modules.Music
@@ -396,6 +428,11 @@ namespace Chino_chan.Commands
                     {
                         if (Music.Queue.Count != 0 && Music.State == Modules.PlayerState.Stopped)
                         {
+                            if (!Music.Connected)
+                            {
+                                await Music.ConnectAsync(Context);
+                            }
+
                             await Music.PlayNextItem(Context);
                         }
                         else
@@ -453,7 +490,7 @@ namespace Chino_chan.Commands
                         if (int.TryParse(Args[1], out int Id))
                         {
                             Music.RemoveItem(Context, Id);
-                            
+
                             return;
                         }
                     }

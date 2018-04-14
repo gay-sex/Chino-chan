@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System;
 
 namespace Chino_chan.Models.Music
 {
@@ -21,6 +22,9 @@ namespace Chino_chan.Models.Music
 
         [JsonProperty("url")]
         public string Url { get; set; }
+
+        [JsonProperty("duration")]
+        public TimeSpan Duration { get; set; }
     }
 
 }
