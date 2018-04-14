@@ -195,7 +195,7 @@ namespace Chino_chan.Commands
         {
             var Embed = new EmbedBuilder()
             {
-                Color = new Color(255 << 16 | 050 << 8 | 230),
+                Color = new Color(255, 50, 230),
                 Title = "**" + Language.ServerInformationHeader + "**"
             };
 
@@ -226,7 +226,7 @@ namespace Chino_chan.Commands
 
                 DrivesText += $"- { Label } [{ Drive.DriveFormat }] ({ Drive.Name }): { Total - Free }GB / { Total }GB { Language.Free } { Free }GB\n";
             }
-
+            Console.WriteLine("Drives done");
             Embed.AddField(new EmbedFieldBuilder()
             {
                 Name = Language.OperatingSystemHeader,
@@ -235,6 +235,7 @@ namespace Chino_chan.Commands
                       + $"- { Language.Architecture }: { Os.Architecture }",
                 IsInline = false
             });
+            Console.WriteLine("OS done");
             Embed.AddField(new EmbedFieldBuilder()
             {
                 Name = Language.ProcessorHeader,
@@ -247,6 +248,7 @@ namespace Chino_chan.Commands
                       + $"- { Language.Cores }/{ Language.Threads }: { CPU.Cores }/{ CPU.Threads }\n\n",
                 IsInline = false
             });
+            Console.WriteLine("Processor done");
             Embed.AddField(new EmbedFieldBuilder()
             {
                 Name = Language.Memory,
@@ -254,19 +256,21 @@ namespace Chino_chan.Commands
                       + $"- { Language.Free }: { MemFree } MB",
                 IsInline = false
             });
+            Console.WriteLine("Memory done");
             Embed.AddField(new EmbedFieldBuilder()
             {
                 Name = Language.Drives,
                 Value = DrivesText,
                 IsInline = false
             });
+            Console.WriteLine("Added drives");
             Embed.AddField(new EmbedFieldBuilder()
             {
                 Name = Language.VideoCard,
                 Value = VideoCard.Name + " - " + VideoCard.RAM / 1024 / 1024 + "MB",
                 IsInline = false
             });
-
+            Console.WriteLine("VideoCard");
             await Context.Channel.SendMessageAsync("", embed: Embed.Build());
         }
 

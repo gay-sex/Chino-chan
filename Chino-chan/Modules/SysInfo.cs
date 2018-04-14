@@ -37,7 +37,7 @@ namespace Chino_chan.Modules
                 else
                 {
                     var CPUPref = Searcher.Get().Cast<ManagementBaseObject>().FirstOrDefault();
-                    return (float)CPUPref["PercentProcessorTime"];
+                    return float.Parse(CPUPref["PercentProcessorTime"].ToString());
                 }
             }
         }
