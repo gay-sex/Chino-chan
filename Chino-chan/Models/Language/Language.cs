@@ -165,8 +165,7 @@ namespace Chino_chan.Models.Language
                                                 "%P%music connect / c - connects to the voice channel where you are if not connected\n" +
                                                 "%P%music disconnect / dc - disconnect from the voice channel - only admins\n\n" +
                                                 "[Management]\n" +
-                                                "%P%music play (youtube link or id) - adds a YouTube video, or resumes the current if it's written without parameters~\n" +
-                                                "%P%music play search [keyword] - searches for a YouTube video and adds to the queue [Currently the first match is selected]\n" +
+                                                "%P%music play (youtube link, id or keyword) - adds a YouTube video, or resumes the current if it's written without parameters~\n" +
                                                 "%P%music stop - Stops the current music playing\n" +
                                                 "%P%music pause - Pauses the current music playing\n" +
                                                 "%P%music volume - Resumes the current music playing\n" +
@@ -181,7 +180,7 @@ namespace Chino_chan.Models.Language
         public string MusicNotConnected { get; set; } = "I'm not connected to any of the voice channels here :(";
         public string MusicNotPlaying { get; set; } = "There's nothing played currently, sorry :c";
         public string MusicStopped { get; set; } = "Playing stopped";
-        public string MusicFinishedQueue { get; set; } = "Playing finished the queue~";
+        public string MusicFinishedQueue { get; set; } = "Finished playing the queue~";
         public string MusicEmptyQueue { get; set; } = "The queue is empty :(";
         public string MusicPaused { get; set; } = "Paused";
         public string MusicResumed { get; set; } = "Resumed";

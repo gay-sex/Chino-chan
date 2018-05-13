@@ -214,7 +214,7 @@ namespace Chino_chan
 
             Services = new ServiceCollection().BuildServiceProvider();
 
-            CommandService.AddModulesAsync(Assembly.GetEntryAssembly()).ContinueWith((ModuleInfo) =>
+            CommandService.AddModulesAsync(Assembly.GetEntryAssembly(), Services).ContinueWith((ModuleInfo) =>
             {
                 Logger.Log(ConsoleColor.Cyan, LogType.Commands, null, "Loaded Commands!");
                 var Modules = ModuleInfo.Result;
@@ -259,13 +259,7 @@ namespace Chino_chan
                     var Prefs = Global.Settings.SayPreferences[Context.User.Id];
                     if (Prefs.Listening.ContainsKey(Context.Channel.Id))
                     {
-                        var Channel = Client.GetChannel(Prefs.Listening[Context.Channel.Id]) as ITextChannel;
-                        if (Channel == null)
-                        {
-                            Global.Settings.SayPreferences[Context.User.Id].Listening.Remove(Context.Channel.Id);
-                            SaveSettings();
-                        }
-                        else
+                        if (Client.GetChannel(Prefs.Listening[Context.Channel.Id]) is ITextChannel Channel)
                         {
                             await Channel.SendMessageAsync(Message.Content);
 
@@ -277,6 +271,11 @@ namespace Chino_chan
                                     await Message.DeleteAsync();
                                 }
                             }
+                        }
+                        else
+                        {
+                            Global.Settings.SayPreferences[Context.User.Id].Listening.Remove(Context.Channel.Id);
+                            SaveSettings();
                         }
                     }
                 }
@@ -451,7 +450,7 @@ namespace Chino_chan
             if (!File.Exists("libsodium.dll"))
             {
                 Logger.Log(ConsoleColor.DarkYellow, LogType.ExternalModules, "Sodium", "Sodium is missing, downloading...");
-                var Link = "https://exmodify.s-ul.eu/LG7gOj3D.dll";
+                var Link = "https://exmodify.s-ul.eu/EXRESXDD.dll";
                 var Client = new WebClient();
                 Client.DownloadFile(Link, "libsodium.dll");
                 if (File.Exists("libsodium.dll"))
@@ -469,7 +468,7 @@ namespace Chino_chan
             if (!File.Exists("opus.dll"))
             {
                 Logger.Log(ConsoleColor.DarkYellow, LogType.ExternalModules, "Opus", "Opus is missing, downloading...");
-                var Link = "https://exmodify.s-ul.eu/WaiYfJBZ.dll";
+                var Link = "https://exmodify.s-ul.eu/b5b2xIuK.dll";
                 var Client = new WebClient();
                 Client.DownloadFile(Link, "opus.dll");
                 if (File.Exists("opus.dll"))

@@ -1,5 +1,6 @@
 ﻿using Chino_chan.Models.Images;
 using Chino_chan.Models.Language;
+using Chino_chan.Models.osuAPI;
 using Chino_chan.Models.Privileges;
 using Chino_chan.Models.Settings;
 using Chino_chan.Modules;
@@ -397,16 +398,16 @@ namespace Chino_chan.Commands
                     }
                     if (Args.Length > 1)
                     {
-                        var Link = Args[1];
-                        if (Link.ToLower() == "search")
+                        var Link = string.Join(" ", Args.Skip(1));
+                        if (string.IsNullOrWhiteSpace(Music.GetInformation(Music.GetYoutubeId(Link)).Title))
                         {
-                            if (Args.Length == 2)
+                            if (Link.Trim() == "")
                             {
                                 await Context.Channel.SendMessageAsync(Context.Prepare(Language.MusicHelp));
                             }
                             else
                             {
-                                var Res = await Music.SearchAsync(string.Join(" ", Args.Skip(2)));
+                                var Res = await Music.SearchAsync(Link);
                                 if (Res.Items.Count == 0)
                                 {
                                     await Context.Channel.SendMessageAsync(Language.MusicNoKeywordMatch);

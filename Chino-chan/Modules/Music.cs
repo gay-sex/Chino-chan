@@ -314,16 +314,17 @@ namespace Chino_chan.Modules
 
             await SendNowPlayingAsync(Context);
 
+            Process Process = null;
             Stream Stream = null;
 
             State = PlayerState.Playing;
-            var PCMStream = Client.CreatePCMStream(AudioApplication.Music);
+            var PCMStream = Client.CreatePCMStream(AudioApplication.Mixed, 96 * 1024, 200);
             var Buffer = new byte[8 * 1024];
             var Count = 0;
 
             if (string.IsNullOrWhiteSpace(NowPlaying.YouTubeInfo.Title))
             {
-                Stream = CreateFFmpegStream(NowPlaying.Path);
+                Process = CreateFFmpegProcess(NowPlaying.Path);
             }
             else
             {
@@ -340,13 +341,13 @@ namespace Chino_chan.Modules
                 {
                     Url = InfoSet.Muxed.First().Url;
                 }
-                Stream = CreateFFmpegStream(Url);
+                Process = CreateFFmpegProcess(Url);
             }
-
-            await Task.Delay(1000);
-
-            if (Stream != null)
+            
+            if (Process != null)
             {
+                Stream = Process.StandardOutput.BaseStream;
+
                 while ((Count = await Stream.ReadAsync(Buffer, 0, Buffer.Length)) != 0)
                 {
                     if (State == PlayerState.Paused)
@@ -385,8 +386,10 @@ namespace Chino_chan.Modules
                     {
                         await PCMStream.WriteAsync(Buffer, 0, Count);
                     }
-                    catch
+                    catch (Exception e)
                     {
+                        await Context.Channel.SendMessageAsync("An error has occured with the Audio Stream!");
+                        Console.WriteLine(e.Message);
                         break;
                     }
                 }
@@ -436,7 +439,7 @@ namespace Chino_chan.Modules
             }
 
         }
-        private Stream CreateFFmpegStream(string PathOrUrl)
+        private Process CreateFFmpegProcess(string PathOrUrl)
         {
             var ffmpeg = new ProcessStartInfo
             {
@@ -445,7 +448,7 @@ namespace Chino_chan.Modules
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
             };
-            return Process.Start(ffmpeg).StandardOutput.BaseStream;
+            return Process.Start(ffmpeg);
         }
         
         private byte[] ChangeVolume(byte[] AudioSamples, float Volume)
@@ -475,7 +478,7 @@ namespace Chino_chan.Modules
             return Output;
         }
 
-        private string GetYoutubeId(string Link)
+        public string GetYoutubeId(string Link)
         {
             var Rx = new Regex("(http:\\/\\/|https:\\/\\/)?(www\\.)?(youtu\\.be|youtube\\.com)\\/(watch\\?v=)?(\\S*)?");
             if (Rx.IsMatch(Link))
@@ -502,7 +505,7 @@ namespace Chino_chan.Modules
 
             return Link;
         }
-        private YouTubeResponse GetInformation(string Id)
+        public YouTubeResponse GetInformation(string Id)
         {
             WebClient HelperClient = new WebClient();
 

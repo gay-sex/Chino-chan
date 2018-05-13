@@ -122,12 +122,12 @@ namespace Chino_chan.Modules
         #endregion
 
         #region Get User
-        public async Task<User> GetUser(int UserID, Mode Mode)
+        public async Task<User> GetUser(int UserID, Mode Mode = Mode.Standard)
         {
             var Endpoint = User + "&u=" + UserID + "&type=id&m=" + (int)Mode;
             return await Call<User>(Endpoint);
         }
-        public async Task<User> GetUser(string UserName, Mode Mode)
+        public async Task<User> GetUser(string UserName, Mode Mode = Mode.Standard)
         {
             var Endpoint = User + "&u=" + UserName + "&type=string&m=" + (int)Mode;
             return await Call<User>(Endpoint);
@@ -135,81 +135,81 @@ namespace Chino_chan.Modules
         #endregion
 
         #region Get Scores
-        public async Task<UserScore> GetUserScoreOn(int UserID, int BeatmapID, Mode Mode)
+        public async Task<UserScore> GetUserScoreOn(int UserID, int BeatmapID, Mode Mode = Mode.Standard)
         {
             return (await GetUserScoresOn(UserID, BeatmapID, Mode, 1))[0];
         }
-        public async Task<UserScore> GetUserScoreOn(string UserName, int BeatmapID, Mode Mode)
+        public async Task<UserScore> GetUserScoreOn(string UserName, int BeatmapID, Mode Mode = Mode.Standard)
         {
             return (await GetUserScoresOn(UserName, BeatmapID, Mode, 1))[0];
         }
 
-        public async Task<UserScore[]> GetUserScoresOn(int UserID, int BeatmapID, Mode Mode, int Limit = 50)
+        public async Task<UserScore[]> GetUserScoresOn(int UserID, int BeatmapID, Mode Mode = Mode.Standard, int Limit = 50)
         {
             var Endpoint = Scores + "&u=" + UserID + "&type=id&m=" + (int)Mode + "&b=" + BeatmapID + "&limit=" + Limit;
             return await Call<UserScore[]>(Endpoint);
         }
-        public async Task<UserScore[]> GetUserScoresOn(string UserName, int BeatmapID, Mode Mode, int Limit = 50)
+        public async Task<UserScore[]> GetUserScoresOn(string UserName, int BeatmapID, Mode Mode = Mode.Standard, int Limit = 50)
         {
             var Endpoint = Scores + "&u=" + UserName + "&type=string&m=" + (int)Mode + "&b=" + BeatmapID + "&limit=" + Limit;
             return await Call<UserScore[]>(Endpoint);
         }
 
-        public async Task<UserScore[]> GetBeatmapTopScores(int BeatmapID, Mode Mode, int Limit = 50)
+        public async Task<UserScore[]> GetBeatmapTopScores(int BeatmapID, Mode Mode = Mode.Standard, int Limit = 50)
         {
             var Endpoint = Scores + "&m=" + (int)Mode + "&b=" + BeatmapID + "&limit=" + Limit;
             return await Call<UserScore[]>(Endpoint);
         }
         #endregion
         #region Get Best Scores
-        public async Task<BestScore[]> GetUserBestScores(string UserName, Mode Mode, int Limit = 50)
+        public async Task<BestScore[]> GetUserBestScores(string UserName, Mode Mode = Mode.Standard, int Limit = 50)
         {
             var Endpoint = UserBest + "&u=" + UserName + "&type=string&m=" + (int)Mode + "&limit=" + Limit;
             return await Call<BestScore[]>(Endpoint);
         }
-        public async Task<BestScore[]> GetUserBestScores(int UserID, Mode Mode, int Limit = 50)
+        public async Task<BestScore[]> GetUserBestScores(int UserID, Mode Mode = Mode.Standard, int Limit = 50)
         {
             var Endpoint = UserBest + "&u=" + UserID + "&type=id&m=" + (int)Mode + "&limit=" + Limit;
             return await Call<BestScore[]>(Endpoint);
         }
 
-        public async Task<BestScore> GetUserBestScore(string UserName, Mode Mode)
+        public async Task<BestScore> GetUserBestScore(string UserName, Mode Mode = Mode.Standard)
         {
             return (await GetUserBestScores(UserName, Mode, 1))[0];
         }
-        public async Task<BestScore> GetUserBestScore(int UserID, Mode Mode)
+        public async Task<BestScore> GetUserBestScore(int UserID, Mode Mode = Mode.Standard)
         {
             return (await GetUserBestScores(UserID, Mode, 1))[0];
         }
         #endregion
         #region Get Recent
-        public async Task<RecentScore[]> GetUserRecentScores(string UserName, Mode Mode, int Limit = 10)
+        public async Task<RecentScore[]> GetUserRecentScores(string UserName, Mode Mode = Mode.Standard, int Limit = 10)
         {
             var Endpoint = UserRecent + "&u=" + UserName + "&type=string&m=" + (int)Mode + "&limit=" + Limit;
             return await Call<RecentScore[]>(Endpoint);
         }
-        public async Task<RecentScore[]> GetUserRecentScores(int UserID, Mode Mode, int Limit = 10)
+        public async Task<RecentScore[]> GetUserRecentScores(int UserID, Mode Mode = Mode.Standard, int Limit = 10)
         {
             var Endpoint = UserRecent + "&u=" + UserID + "&type=id&m=" + (int)Mode + "&limit=" + Limit;
             return await Call<RecentScore[]>(Endpoint);
         }
 
-        public async Task<RecentScore> GetUserRecentScore(string UserName, Mode Mode)
+        public async Task<RecentScore> GetUserRecentScore(string UserName, Mode Mode = Mode.Standard)
         {
             return (await GetUserRecentScores(UserName, Mode, 1))[0];
         }
-        public async Task<RecentScore> GetUserRecentScore(int UserID, Mode Mode)
+        public async Task<RecentScore> GetUserRecentScore(int UserID, Mode Mode = Mode.Standard)
         {
             return (await GetUserRecentScores(UserID, Mode, 1))[0];
         }
         #endregion
         #region Get Beatmaps
-        public async Task<Beatmap> GetBeatmap(int BeatmapID, Mode Mode)
+        public async Task<Beatmap> GetBeatmapAsync(int BeatmapID, Mode Mode = Mode.Standard)
         {
             var Endpoint = Beatmap + "&b=" + BeatmapID + "&m=" + (int)Mode;
             return (await Call<Beatmap[]>(Endpoint))[0];
         }
-        public async Task<Beatmap[]> GetBeatmaps(int BeatmapSetID, Mode Mode)
+        public async Task<Beatmap[]> GetBeatmapsAsync(int BeatmapSetID, Mode Mode = Mode.Standard)
         {
             var Endpoint = Beatmap + "&s=" + BeatmapSetID + "&m=" + (int)Mode;
             return await Call<Beatmap[]>(Endpoint);

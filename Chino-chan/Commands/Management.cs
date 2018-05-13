@@ -86,7 +86,7 @@ namespace Chino_chan.Commands
             }
             else
             {
-                Global.GuildSettings.Modify(Context.Guild.Id, Modi =>
+                Global.GuildSettings.Modify(Settings.GuildId, Modi =>
                 {
                     Modi.Prefix = string.Join(" ", Prefix);
                 });

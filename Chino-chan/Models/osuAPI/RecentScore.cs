@@ -8,7 +8,7 @@ namespace Chino_chan.Models.osuAPI
     public struct RecentScore
     {
         [JsonProperty("beatmap_id")]
-        public string BeatmapID { get; set; }
+        public int BeatmapId { get; set; }
 		
         [JsonProperty("score")]
         public long Score { get; set; }

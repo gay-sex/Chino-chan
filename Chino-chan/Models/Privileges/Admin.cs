@@ -11,7 +11,7 @@ namespace Chino_chan.Models.Privileges
     {
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
-            if (Global.IsAdminOrHigher(context.User.Id, context.Guild.Id))
+            if (Global.IsAdminOrHigher(context.User.Id, context.Guild == null ? context.Channel.Id : context.Guild.Id))
             {
                 return Task.Run(() => PreconditionResult.FromSuccess());
             }
